@@ -32,15 +32,15 @@ private:
 
 public:
     OcTree(Cube img) {
-        root = new Node({0, 0, 0}, {img.size() - 1, img[0].size() -1, img[0][0].size() - 1});
+        root = new Node({0, 0, 0}, {img[0][0].size() - 1, img[0].size() - 1, img.size() - 1});
         this->img = img;
 
-        build (0, 0, 0, img.size() - 1, img[0].size() -1, img[0][0].size() - 1, root);
+        build (0, 0, 0, img[0][0].size() - 1, img[0].size() - 1, img.size() - 1, root);
     }
 
     void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Node *root) {
         if (check(x_min, y_min, z_min, x_max, y_max, z_max)) {
-            root->type = img[x_min][y_min][z_min] == 0 ? empty : full;
+            root->type = img[z_min][y_min][x_min] == 0 ? full : empty;
             return;
         }
 
@@ -76,12 +76,12 @@ public:
 
 
     bool check (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max) {
-        bool c = img[x_min][y_min][z_min];
+        bool c = img[z_min][y_min][x_min];
 
-        for (int x = x_min; x < x_max; ++x) {
+        for (int z = z_min; z < z_max; ++z) {
             for (int y = y_min; y < y_max; ++y) {
-                for (int z = z_min; z < z_max; ++z) {
-                    if (img[x][y][z] != c) return false;
+                for (int x = x_min; x < x_max; ++x) {
+                    if (img[z][y][x] != c) return false;
                 }
             }
         }

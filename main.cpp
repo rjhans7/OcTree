@@ -23,7 +23,8 @@ Cube build_cube (string filename) {
 		CImg<char> imgBin(img.width(),img.height());
 		//Binarizar
 		cimg_forXY(img, x, y) { 
-			imgBin(x, y) = (img(x, y, 0) + img(x, y, 1) +  img(x, y, 2)) / 3;
+			if ((img(x, y, 0) + img(x, y, 1) +  img(x, y, 2)) / 3) imgBin(x, y) = 0;
+			else imgBin(x, y) = 1;
 		}
 
 		for (int i = 0; i < imgBin.width(); i++) {
@@ -38,11 +39,28 @@ Cube build_cube (string filename) {
 
 }
 
+void visualizar(Cube cubo) { 
+	for (size_t k = 0; k < cubo.size(); k++) {
+		for (size_t j = 0; j < cubo[0].size(); j++) {
+			for (size_t i = 0; i < cubo[0][0].size(); i++) {
+				cout << cubo[k][j][i] << " ";
+			}
+			cout << endl;
+		}
+		cout << endl << endl;
+		
+	}
+	
+}
+
 
 int main() {
 
   auto cubo = build_cube("test1.txt");
   OcTree oct(cubo);
+ // visualizar(cubo);
+
+  cout << endl;
   
 
 
