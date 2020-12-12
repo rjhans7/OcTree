@@ -44,7 +44,7 @@
 #include "CImg/CImg.h"
 using namespace cimg_library;
 #ifndef cimg_imagepath
-#define cimg_imagepath ""
+#define cimg_imagepath "CImg/examples/img/"
 #endif
 
 // Main procedure
@@ -53,7 +53,7 @@ int main(int argc,char **argv) {
 
   // Read command line arguments.
   cimg_usage("Render an image as a surface");
-  const char *file_i    = cimg_option("-i",cimg_imagepath "1.BMP","Input image");
+  const char *file_i    = cimg_option("-i",cimg_imagepath "milla.bmp","Input image");
   const char *file_o    = cimg_option("-o",(char*)0,"Output 3D object");
   const float sigma     = cimg_option("-smooth",1.0f,"Amount of image smoothing");
   const float ratioz    = cimg_option("-z",0.25f,"Aspect ratio along z-axis");
