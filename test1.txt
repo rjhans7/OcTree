@@ -1,0 +1,8 @@
+test/img1.bmp
+test/img2.bmp
+test/img3.bmp
+test/img4.bmp
+test/img5.bmp
+test/img6.bmp
+test/img7.bmp
+test/img8.bmp
