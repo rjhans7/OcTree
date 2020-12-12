@@ -58,7 +58,7 @@ public:
         build (x_m+1, y_min, z_m+1, x_max, y_m, z_max, root->children[2]);
 
         root->children[3] = new Node ({x_m + 1, y_min, z_min}, {x_max, y_m, z_m});
-        build (x_min + 1, y_min, z_min, x_max, y_m, z_m, root->children[3]);
+        build (x_m + 1, y_min, z_min, x_max, y_m, z_m, root->children[3]);
 
         root->children[4] = new Node ({x_min, y_m, z_min}, {x_m, y_max, z_m});
         build (x_min, y_m, z_min, x_m, y_max, z_m, root->children[4]);
@@ -78,9 +78,9 @@ public:
     bool check (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max) {
         bool c = img[z_min][y_min][x_min];
 
-        for (int z = z_min; z < z_max; ++z) {
-            for (int y = y_min; y < y_max; ++y) {
-                for (int x = x_min; x < x_max; ++x) {
+        for (int z = z_min; z <= z_max; ++z) {
+            for (int y = y_min; y <= y_max; ++y) {
+                for (int x = x_min; x <= x_max; ++x) {
                     if (img[z][y][x] != c) return false;
                 }
             }
