@@ -5,6 +5,7 @@
 using namespace std;
 
 typedef tuple <int, int, int> Point;
+typedef vector<vector<vector<int>>> Cube;
 
 class OcTree {
 private:
@@ -26,13 +27,15 @@ private:
     };
 
     Node* root;
-    string filename;
-    vector<vector<vector<int>>> img;
+ 
+    Cube img;
 
 public:
-    OcTree(string filename) {
-        root = nullptr;
-        this->filename = filename;
+    OcTree(Cube img) {
+        root = new Node({0, 0, 0}, {img.size() - 1, img[0].size() -1, img[0][0].size() - 1});
+        this->img = img;
+
+        build (0, 0, 0, img.size() - 1, img[0].size() -1, img[0][0].size() - 1, root);
     }
 
     void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Node *root) {
@@ -45,15 +48,29 @@ public:
         int y_m = (y_max + y_min) / 2;
         int z_m = (z_max + z_min) / 2;
 
-        root->children[0] = new Node ({x_min, y_min, z_min}, {x_m - 1, y_m - 1, z_m - 1});
-        build (x_min, y_min, z_min, x_m - 1, y_m - 1, z_m - 1, root->children[0]);
-        root->children[1] = new Node ({x_m + 1, y_min, z_min}, {x_max, y_max, z_m - 1});
-        root->children[2] = new Node ({x_min, y_m + 1, z_min}, {x_m - 1, y_max, z_max});
-        root->children[3] = new Node ({x_min, y_min, z_m + 1}, {x_max, y_m - 1, z_max});
-        root->children[4] = new Node ({x_m, y_m + 1, z_m + 1}, {x_m - 1, y_max, z_max});
-        root->children[5] = new Node ({x_m + 1, y_min, z_m + 1}, {x_max, y_m - 1, z_max});
-        root->children[6] = new Node ({x_m + 1, y_m + 1, z_min}, {x_max, y_max, z_m - 1});
-        root->children[7] = new Node ({x_m + 1, y_m + 1, z_m + 1}, {x_max, y_max, z_max});
+        root->children[0] = new Node ({x_min, y_min, z_min}, {x_m, y_m, z_m});
+        build (x_min, y_min, z_min, x_m, y_m, z_m, root->children[0]);
+        
+        root->children[1] = new Node ({x_min, y_min, z_m + 1}, {x_m, y_m, z_max});
+        build (x_min, y_min, z_m + 1, x_m, y_m, z_max, root->children[1]);
+
+        root->children[2] = new Node ({x_m + 1, y_min, z_m+1}, {x_max, y_m, z_max});
+        build (x_m+1, y_min, z_m+1, x_max, y_m, z_max, root->children[2]);
+
+        root->children[3] = new Node ({x_m + 1, y_min, z_min}, {x_max, y_m, z_m});
+        build (x_min + 1, y_min, z_min, x_max, y_m, z_m, root->children[3]);
+
+        root->children[4] = new Node ({x_min, y_m, z_min}, {x_m, y_max, z_m});
+        build (x_min, y_m, z_min, x_m, y_max, z_m, root->children[4]);
+        
+        root->children[5] = new Node ({x_min, y_min, z_m + 1}, {x_m, y_max, z_max});
+        build (x_min, y_min, z_m + 1, x_m, y_max, z_max, root->children[5]);
+        
+        root->children[6] = new Node ({x_m + 1, y_m + 1, z_m + 1}, {x_max, y_max, z_max});
+        build (x_m + 1, y_m + 1, z_m + 1, x_max, y_max, z_max, root->children[6]);
+        
+        root->children[7] = new Node ({x_m + 1, y_m + 1, z_min}, {x_max, y_max, z_m});
+        build (x_m + 1, y_m + 1, z_min, x_max, y_max, z_m, root->children[7]);
 
     }
 
