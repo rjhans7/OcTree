@@ -40,7 +40,7 @@ public:
 
     void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Node *root) {
         if (check(x_min, y_min, z_min, x_max, y_max, z_max)) {
-            root->type = img[z_min][y_min][x_min] == 0 ? full : empty;
+            root->type = img[z_min][y_min][x_min] == 0 ? empty : full;
             return;
         }
 
