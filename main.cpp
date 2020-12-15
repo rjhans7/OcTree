@@ -39,15 +39,15 @@ Cube build_cube (string filename) {
 
 }
 
-void visualizar(Cube cubo) { 
+void visualizar(Cube cubo, ofstream &fileout) { 
 	for (size_t k = 0; k < cubo.size(); k++) {
 		for (size_t j = 0; j < cubo[0].size(); j++) {
 			for (size_t i = 0; i < cubo[0][0].size(); i++) {
-				cout << cubo[k][j][i] << " ";
+				fileout << cubo[k][j][i] << " ";
 			}
-			cout << endl;
+			fileout << endl;
 		}
-		cout << endl << endl;
+		fileout << endl << endl;
 		
 	}
 	
@@ -56,9 +56,10 @@ void visualizar(Cube cubo) {
 
 int main() {
 
-  auto cubo = build_cube("test1.txt");
-  OcTree oct(cubo);
- // visualizar(cubo);
+  	auto cubo = build_cube("test1.txt");
+ 	visualizar(cubo);
+  	OcTree oct(cubo);
+ 
 
   cout << endl;
   
