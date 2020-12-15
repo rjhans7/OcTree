@@ -29,7 +29,7 @@ Cube build_cube (string filename) {
 
 		for (int i = 0; i < imgBin.width(); i++) {
 			for(int j = 0; j <imgBin.height(); j++) {
-				paciente[z][j][i] = imgBin(i, j);
+				paciente[z][j][i] = imgBin(j, i);
 			}
 		}
 		z++;

@@ -133,9 +133,9 @@ public:
     bool check (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Cube &img) {
         bool c = img[z_min][y_min][x_min];
 
-        for (int z = z_min; z < z_max; ++z) {
-            for (int y = y_min; y < y_max; ++y) {
-                for (int x = x_min; x < x_max; ++x) {
+        for (int z = z_min; z <= z_max; ++z) {
+            for (int y = y_min; y <= y_max; ++y) {
+                for (int x = x_min; x <= x_max; ++x) {
                     if (img[z][y][x] != c) return false;
                 }
             }
