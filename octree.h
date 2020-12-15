@@ -56,8 +56,9 @@ public:
             images[i] = CImg (8, 8);
         }
         rebuild (root, images, file);
-        for (int i = 0; i < 8; i++)
-            images[i].display ();
+        for (int i = 0; i < N_IMAGES; i++) {
+            images[i].display();
+        }
     }
 
     void rebuild(Node root, CImg<char> *images, fstream &file){
@@ -101,7 +102,8 @@ public:
 
     void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Node &root, Cube &img, fstream &file) {
         if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
-            root.type = img[z_min][y_min][x_min] == 0 ? empty : full;
+            root.type = img[z_min][y_min][x_min] == 0 ? full : empty;
+            root.write(file, root.id);
             return;
         }
 
@@ -154,7 +156,7 @@ public:
         build (x_min, y_min, z_min, x_m, y_m, z_m, child_0, img, file);
         build (x_min, y_min, z_m + 1, x_m, y_m, z_max,child_1, img, file);
         build (x_m+1, y_min, z_m+1, x_max, y_m, z_max, child_2, img, file);
-        build (x_min + 1, y_min, z_min, x_max, y_m, z_m, child_3, img, file);
+        build (x_m + 1, y_min, z_min, x_max, y_m, z_m, child_3, img, file);
         build (x_min, y_m, z_min, x_m, y_max, z_m, child_4, img, file);
         build (x_min, y_min, z_m + 1, x_m, y_max, z_max, child_5, img, file);
         build (x_m + 1, y_m + 1, z_m + 1, x_max, y_max, z_max, child_6, img, file);

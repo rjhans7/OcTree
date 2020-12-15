@@ -8,7 +8,7 @@
 #define N_Z 8
 
 
-using namespace cimg_library;
+// using namespace cimg_library;
 using namespace std;
 
 Cube build_cube (string filename) {
@@ -38,7 +38,8 @@ Cube build_cube (string filename) {
 
 }
 
-void visualizar(Cube cubo, ofstream &fileout) { 
+void visualizar(Cube cubo, string filename) { 
+	ofstream fileout (filename.c_str());
 	for (size_t k = 0; k < cubo.size(); k++) {
 		for (size_t j = 0; j < cubo[0].size(); j++) {
 			for (size_t i = 0; i < cubo[0][0].size(); i++) {
@@ -46,22 +47,30 @@ void visualizar(Cube cubo, ofstream &fileout) {
 			}
 			fileout << endl;
 		}
-		fileout << endl << endl;
+		fileout << endl;
 		
 	}
 	
 }
 
 
+Cube read_cube (string filename) {
+	Cube cubo (N_Z,vector<vector<int>>(N_Y,vector <int>(N_X,0)));
+	ifstream fileout (filename.c_str());
+	for (size_t k = 0; k < cubo.size(); k++) {
+		for (size_t j = 0; j < cubo[0].size(); j++) {
+			for (size_t i = 0; i < cubo[0][0].size(); i++) {
+				fileout >> cubo[k][j][i];
+			}
+		}		
+	}
+	return cubo;
+
+}
+
 int main() {
 
-  	auto cubo = build_cube("test1.txt");
- 	//visualizar(cubo);
+	auto cubo = read_cube("cubo.txt");
   	OcTree oct(cubo);
 	OcTree oct2 ("octree.bin");
-
-  cout << endl;
-  
-
-
 }
