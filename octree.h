@@ -1,7 +1,11 @@
 #include<iostream> 
 #include<tuple>
 #include <vector>
+#include "CImg/CImg.h"
 
+#define N_IMAGES 8
+
+using namespace cimg_library;
 using namespace std;
 
 typedef tuple <int, int, int> Point;
@@ -47,11 +51,39 @@ public:
         fstream file(filename.c_str(), ios::binary | ios::in); 
         Node root;
         root.read(file, 0);
-
+        CImg<char> images[N_IMAGES];
+        for (int i = 0; i < N_IMAGES; i++) {
+            images[i] = CImg (8, 8);
+        }
+        rebuild (root, images, file);
+        for (int i = 0; i < 8; i++)
+            images[i].display ();
     }
 
-    void rebuild(){
+    void rebuild(Node root, CImg<char> *images, fstream &file){
+        if (root.type == full || root.type == empty) {
+            cout << "nodo pintado" << endl;
+            for (int z = get<2>(root.p_start); z <= get<2>(root.p_end); z++)
+                rebuild_img (root, z, images);
+        }
+        else {
+            for (int i = 0; i < 8; i++) {
+                cout << root.children[i] << endl;
+                if (root.children[i] != -1) {
+                    Node child;
+                    child.read (file, root.children[i]);
+                    rebuild (child, images, file);
+                }
+            }
+        }
+    }
 
+    void rebuild_img (Node node, int z, CImg<char> *images) {
+        for (int y = get<1>(node.p_start); y <= get<1>(node.p_end); y++) {
+            for (int x = get<0>(node.p_start); x <= get<0>(node.p_end); x++) {
+                images[z] (y, x) = node.type;
+            }
+        }
     }
 
     OcTree(Cube &img) {
@@ -69,7 +101,7 @@ public:
 
     void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Node &root, Cube &img, fstream &file) {
         if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
-            root.type = img[z_min][y_min][x_min] == 0 ? full : empty;
+            root.type = img[z_min][y_min][x_min] == 0 ? empty : full;
             return;
         }
 

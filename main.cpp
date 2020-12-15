@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "CImg/CImg.h"
 #include "octree.h"
 
 #define N_X 8
@@ -57,9 +56,9 @@ void visualizar(Cube cubo, ofstream &fileout) {
 int main() {
 
   	auto cubo = build_cube("test1.txt");
- 	visualizar(cubo);
+ 	//visualizar(cubo);
   	OcTree oct(cubo);
- 
+	OcTree oct2 ("octree.bin");
 
   cout << endl;
   
