@@ -7,7 +7,7 @@
 // using namespace cimg_library;
 using namespace std;
 
-Cube build_cube (string filename) {
+Cube build_cube (string filename, int dis, int umbral = 50) {
     ifstream fileIn(filename);
 	u_short dim_x, dim_y, dim_z;
 	fileIn >> dim_x >> dim_y >> dim_z;
@@ -20,12 +20,18 @@ Cube build_cube (string filename) {
 		CImg<u_char> imgBin(img.width(),img.height());
 		//Binarizar
 		cimg_forXY(img, x, y) { 
-			if ((img(x, y, 0) + img(x, y, 1) +  img(x, y, 2)) / 3) imgBin(x, y) = 1;
-			else imgBin(x, y) = 0;
+			int R = (int)img(x, y, 0);
+			int G = (int)img(x, y, 1);
+			int B = (int)img(x, y, 2);
+
+			imgBin(x, y) = ((R+G+B)/3 > umbral)? 255: 0;
 		}
 		// imgBin.crop(2, 2, 508, 508);
-		// img.display();
-		// imgBin.display();
+		if (dis) {
+			img.display();
+			imgBin.display();
+		}
+	
 
 		for (int i = 0; i < dim_x; i++) {
 			for(int j = 0; j < dim_y; j++) {
@@ -73,10 +79,12 @@ Cube read_cube (string filename) {
 	return cubo;
 }
 
-int main() {
+int main(int argc,char **argv) {
 
-	auto cubo = build_cube("paciente1_1.txt");
+	const char *file_i = cimg_option("-i","paciente1_1.txt","Input filename");
+	const int dis = cimg_option("-s",0,"Display");
 
+	auto cubo = build_cube(file_i, dis);
  	OcTree oct(cubo);
 	OcTree oct2 ("octree.bin");
 }

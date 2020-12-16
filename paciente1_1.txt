@@ -1,5 +1,4 @@
-512 512 41
-datos_cerebros/paciente_1/1/1.BMP
+512 512 40
 datos_cerebros/paciente_1/1/Paciente1CC-27-10-1988-_CT_from_18-01-2011_S0_I0.BMP
 datos_cerebros/paciente_1/1/Paciente1CC-27-10-1988-_CT_from_18-01-2011_S0_I1.BMP
 datos_cerebros/paciente_1/1/Paciente1CC-27-10-1988-_CT_from_18-01-2011_S0_I2.BMP
