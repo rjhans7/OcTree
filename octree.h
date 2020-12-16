@@ -3,13 +3,17 @@
 #include <vector>
 #include "CImg/CImg.h"
 
-#define N_IMAGES 8
+
 
 using namespace cimg_library;
 using namespace std;
+int ns = 0;
 
-typedef tuple <int, int, int> Point;
-typedef vector<vector<vector<int>>> Cube;
+typedef unsigned short u_short;
+typedef unsigned char u_char;
+typedef bool cube_type;
+typedef tuple <u_short, u_short, u_short> Point;
+typedef vector<vector<vector<cube_type>>> Cube;
 class OcTree {
 private:
 
@@ -92,9 +96,9 @@ public:
 
     OcTree(Cube &img) {
         fstream file("octree.bin", ios::trunc | ios::binary | ios::in | ios::out);
-        int size_x = img[0][0].size() - 1;
-        int size_y = img[0].size() - 1;
-        int size_z = img.size() - 1;
+        u_short size_x = img[0][0].size() - 1;
+        u_short size_y = img[0].size() - 1;
+        u_short size_z = img.size() - 1;
         Node root ({0, 0, 0}, {size_x, size_y, size_z});
         root.write(file, nNodes);
         nNodes++;
@@ -103,16 +107,17 @@ public:
         file.close();
     }
 
-    void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Node &root, Cube &img, fstream &file) {
-        if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
+    void build(u_short x_min, u_short y_min, u_short z_min, u_short x_max, u_short y_max, u_short z_max, Node &root, Cube &img, fstream &file) {
+        cout << "building ... " << ns++ << endl;
+		if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
             root.type = img[z_min][y_min][x_min] == 0 ? full : empty;
             root.write(file, root.id);
             return;
         }
 
-        int x_m = (x_max + x_min) / 2;
-        int y_m = (y_max + y_min) / 2;
-        int z_m = (z_max + z_min) / 2;
+        u_short x_m = (x_max + x_min) / 2;
+        u_short y_m = (y_max + y_min) / 2;
+        u_short z_m = (z_max + z_min) / 2;
 
         Node child_0 ({x_min, y_min, z_min}, {x_m, y_m, z_m});
         child_0.write(file, nNodes);
@@ -167,17 +172,16 @@ public:
     }
 
 
-    bool check (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Cube &img) {
+    bool check (u_short &x_min, u_short &y_min, u_short &z_min, u_short &x_max, u_short &y_max, u_short &z_max, Cube &img) {
         bool c = img[z_min][y_min][x_min];
 
-        for (int z = z_min; z <= z_max; ++z) {
-            for (int y = y_min; y <= y_max; ++y) {
-                for (int x = x_min; x <= x_max; ++x) {
+        for (u_short z = z_min; z <= z_max; ++z) {
+            for (u_short y = y_min; y <= y_max; ++y) {
+                for (u_short x = x_min; x <= x_max; ++x) {
                     if (img[z][y][x] != c) return false;
                 }
             }
         }
-
         return true;
     }
 
