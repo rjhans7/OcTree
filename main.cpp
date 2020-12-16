@@ -3,19 +3,17 @@
 #include <vector>
 #include "octree.h"
 
-#define N_X 8
-#define N_Y 8
-#define N_Z 8
-
 
 // using namespace cimg_library;
 using namespace std;
 
 Cube build_cube (string filename) {
-	Cube paciente (N_Z,vector<vector<int>>(N_Y,vector <int>(N_X,0)));
-
-	ifstream fileIn(filename);
+    ifstream fileIn(filename);
+	int dim_x, dim_y, dim_z;
+	fileIn >> dim_x >> dim_y >> dim_z;
+    Cube paciente (dim_z,vector<vector<int>>(dim_y,vector <int>(dim_z,0)));
 	string fileLine;
+    getline(fileIn, fileLine);
 	unsigned z = 0;
 	while(getline(fileIn, fileLine)) {
 		CImg<char> img(fileLine.c_str());
@@ -40,6 +38,9 @@ Cube build_cube (string filename) {
 
 void visualizar(Cube cubo, string filename) { 
 	ofstream fileout (filename.c_str());
+	fileout << cubo[0][0].size() << " ";
+	fileout << cubo[0].size() << " ";
+	fileout << cubo.size() << endl;
 	for (size_t k = 0; k < cubo.size(); k++) {
 		for (size_t j = 0; j < cubo[0].size(); j++) {
 			for (size_t i = 0; i < cubo[0][0].size(); i++) {
@@ -48,29 +49,28 @@ void visualizar(Cube cubo, string filename) {
 			fileout << endl;
 		}
 		fileout << endl;
-		
 	}
-	
 }
 
 
 Cube read_cube (string filename) {
-	Cube cubo (N_Z,vector<vector<int>>(N_Y,vector <int>(N_X,0)));
-	ifstream fileout (filename.c_str());
-	for (size_t k = 0; k < cubo.size(); k++) {
-		for (size_t j = 0; j < cubo[0].size(); j++) {
-			for (size_t i = 0; i < cubo[0][0].size(); i++) {
-				fileout >> cubo[k][j][i];
-			}
-		}		
-	}
+	ifstream fileIn (filename.c_str());
+    int dim_x, dim_y, dim_z;
+    fileIn >> dim_x >> dim_y >> dim_z;
+    Cube cubo (dim_z,vector<vector<int>>(dim_y,vector <int>(dim_x,0)));
+    for (size_t k = 0; k < dim_z; k++) {
+        for (size_t j = 0; j < dim_y; j++) {
+            for (size_t i = 0; i < dim_x; i++) {
+                fileIn >> cubo[k][j][i];
+            }
+        }
+    }
 	return cubo;
-
 }
 
 int main() {
 
-	auto cubo = read_cube("cubo.txt");
+	auto cubo = build_cube("paciente1_1.txt");
   	OcTree oct(cubo);
 	OcTree oct2 ("octree.bin");
 }

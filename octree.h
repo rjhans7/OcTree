@@ -51,12 +51,15 @@ public:
         fstream file(filename.c_str(), ios::binary | ios::in); 
         Node root;
         root.read(file, 0);
-        CImg<char> images[N_IMAGES];
-        for (int i = 0; i < N_IMAGES; i++) {
-            images[i] = CImg (8, 8);
+        int dim_z = get<2>(root.p_end) + 1;
+        int dim_y = get<1>(root.p_end) + 1;
+        int dim_x = get<0>(root.p_end) + 1;
+        CImg<char> images[dim_z];
+        for (int i = 0; i < dim_z; i++) {
+            images[i] = CImg (dim_x, dim_y);
         }
         rebuild (root, images, file);
-        for (int i = 0; i < N_IMAGES; i++) {
+        for (int i = 0; i < dim_z; i++) {
             images[i].display();
         }
     }
