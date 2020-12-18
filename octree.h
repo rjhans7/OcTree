@@ -16,6 +16,36 @@ typedef tuple <u_short, u_short, u_short> Point;
 typedef vector<vector<vector<cube_type>>> Cube;
 
 
+struct Punto {
+    short x, y, z;
+
+    Punto (u_short x, u_short y, u_short z) : x (x), y (y), z (z) {}
+
+    /* Producto Escalar */
+    u_short operator*(const Punto &p2) {
+        return x * p2.x + y * p2.y + z * p2.z;
+    }
+
+    /* Producto Vectorial */
+    const Punto operator%(const Punto &p2) const {
+        return Punto(y * p2.z - z * p2.y, x * p2.z - z * p2.x, x * p2.y - y * p2.x);
+    }
+
+    const Punto operator+ (const Punto &p2) const {
+        return Punto (x + p2.x, y + p2.y, z + p2.z);
+    }
+
+    const Punto operator-(Punto &p2) const{
+        return Punto (x - p2.x, y - p2.y, z - p2.z);
+    }
+
+    
+};
+
+ostream& operator<< (ostream &out, const Punto &p) {
+        out << "x: " << p.x << " y: " << p.y << " z: " << p.z;
+        return out;
+    }
 struct Plane {
     Point normal;
     Point p1;
@@ -34,7 +64,7 @@ struct Plane {
     }
 };
 
-class OcTree {
+/*class OcTree {
 private:
 
     enum n_type {full, empty, middle};
@@ -107,9 +137,9 @@ public:
 
         Plane plane(normal, p1, p4);
         make_cut(plane, root, nodos);
-    }
+    }*/
 
-    void make_cut (Plane plane,  Node root, vector<Node> &nodos) {
+    /*void make_cut (Plane plane,  Node root, vector<Node> &nodos) {
         if (intersect(plane, root)) {
             if (root.type != middle) {
                 nodos.push_back(root);
@@ -119,18 +149,17 @@ public:
             Node curr;
             for (int i = 0; i < 8; i++) {
                 if (root.children[i] != -1) {
-
                     curr.read(file, root.children[i]);
                     make_cut(plane,curr, nodos)
-                    // reajustar plano
+                    
                 }
             }
         }
         return;
-    }
+    }*/
 
 
-    void rebuildByX (int x) {
+    /*void rebuildByX (int x) {
         fstream file(filename.c_str(), ios::binary | ios::in);
         Node root;
         root.read(file, 0);
@@ -428,4 +457,4 @@ public:
 
 
     ~OcTree(){}
-};
+};*/
