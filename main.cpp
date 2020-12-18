@@ -32,10 +32,9 @@ Cube build_cube (string filename, int dis, int umbral = 50) {
 			imgBin.display();
 		}
 	
-
-		for (int i = 0; i < dim_x; i++) {
-			for(int j = 0; j < dim_y; j++) {
-				paciente[z][j][i] = imgBin(j, i);
+		for(int j = 0; j < dim_y; j++) {
+			for (int i = 0; i < dim_x; i++) {
+				paciente[z][j][i] = imgBin(i, j);
 			}
 		}
 		z++;
@@ -81,10 +80,21 @@ Cube read_cube (string filename) {
 
 int main(int argc,char **argv) {
 
-	const char *file_i = cimg_option("-i","paciente1_1.txt","Input filename");
-	const int dis = cimg_option("-s",0,"Display");
+	const char *file_i = cimg_option("-i", "paciente1_1.txt", "Input filename");
+	const int dis = cimg_option("-s", 0,"Display");
+	const int threshold = cimg_option("-t", 40,"Threshold");
 
-	auto cubo = build_cube(file_i, dis);
+	auto cubo = build_cube(file_i, dis, threshold);
  	OcTree oct(cubo);
+	//visualizar(cubo, "cubo.txt");
 	OcTree oct2 ("octree.bin");
+	//oct2.rebuildAll();
+    // for (int i = 0; i < 8; i++) {
+	// 	oct2.rebuildByX(i);
+	// 	oct2.rebuildByY(i);
+	// 	oct2.rebuildByZ(i);
+	// }
+	oct2.rebuildByX(206);
+	oct2.rebuildByY(206);
+	oct2.rebuildByZ(20);
 }

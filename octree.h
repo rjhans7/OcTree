@@ -49,9 +49,149 @@ private:
     };
 
     long nNodes = 0;
-
+    string filename;
 public:
     OcTree (string filename) {
+        this->filename = filename;        
+    }
+
+    void rebuildByX (int x) {
+        fstream file(filename.c_str(), ios::binary | ios::in);
+        Node root;
+        root.read(file, 0);
+        CImg<char> image (get<1>(root.p_end) + 1, get<2>(root.p_end) + 1);
+        int x_m = (get<0>(root.p_end) + get<0>(root.p_start))/2;
+
+        vector<u_short> c_ids;
+        if (x <= x_m) c_ids = {0, 1, 5, 4};
+        else c_ids = {3, 2, 6, 7};        
+        for (size_t i = 0; i < 4; i++) {
+            Node temp;
+            temp.read(file, root.children[c_ids[i]]);
+            rebuildByX(x, temp, image, file);
+        }
+        
+        image.display();
+
+    }
+
+    void rebuildByX (int x, Node root, CImg<char> &image, fstream &file) {
+        if (root.type != middle ) {
+            if (get<0>(root.p_start) <= x && get<0>(root.p_end) >= x) {
+                for (u_short k = get<2>(root.p_start); k <= get<2>(root.p_end); k++) {
+                    for (u_short j = get<1>(root.p_start); j <= get<1>(root.p_end); j++) {
+                        image(j, k) = root.type;
+                    }
+                }
+            }
+            
+        } else {
+            int x_m = (get<0>(root.p_end) + get<0>(root.p_start))/2;
+
+            vector<u_short> c_ids;
+            if (x <= x_m) c_ids = {0, 1, 5, 4};
+            else c_ids = {3, 2, 6, 7};
+            for (size_t i = 0; i < 4; i++) {
+                if (root.children[c_ids[i]] != -1) {
+                    Node temp;
+                    temp.read(file, root.children[c_ids[i]]);
+                    rebuildByX(x, temp, image, file);
+                }
+            }
+        }
+
+    }
+
+    void rebuildByY (int y) {
+        fstream file(filename.c_str(), ios::binary | ios::in); 
+        Node root;
+        root.read(file, 0);
+        CImg<char> image (get<0>(root.p_end) + 1, get<2>(root.p_end) + 1);
+        int y_m = (get<1>(root.p_end) + get<1>(root.p_start))/2;
+
+        size_t i = (y <= y_m)? 0 : 4;
+        size_t i_e = (y <= y_m)? 4 : 8;
+        for (; i < i_e; i++) {
+            Node temp;
+            temp.read(file, root.children[i]);
+            rebuildByY(y, temp, image, file);
+        }
+        image.display();
+    }
+
+    void rebuildByY (int y, Node root, CImg<char> &image, fstream &file) {
+        if (root.type != middle ) {
+            if (get<1>(root.p_start) <= y && get<1>(root.p_end) >= y) {
+                for (u_short k = get<2>(root.p_start); k <= get<2>(root.p_end); k++) {
+                    for (u_short i = get<0>(root.p_start); i <= get<0>(root.p_end); i++) {
+                        image(i, k) = root.type;
+                    }
+                }
+            }
+            
+        } else {
+            int y_m = (get<1>(root.p_end) + get<1>(root.p_start))/2;
+            
+            size_t i = (y <= y_m)? 0 : 4;
+            size_t i_e = (y <= y_m)? 4 : 8;
+            for (; i < i_e; i++) {
+                if (root.children[i] != -1) {
+                    Node temp;
+                    temp.read(file, root.children[i]);
+                    rebuildByY(y, temp, image, file);
+                }
+            }
+        }
+
+    }
+
+    void rebuildByZ (int z) {
+        fstream file(filename.c_str(), ios::binary | ios::in); 
+        Node root;
+        root.read(file, 0);
+        CImg<char> image (get<0>(root.p_end) + 1, get<1>(root.p_end) + 1);
+        int z_m = (get<2>(root.p_end) + get<2>(root.p_start))/2;
+
+        vector<u_short> c_ids;
+        if (z <= z_m) c_ids = {0, 4, 7, 3};
+        else c_ids = {1, 5, 6, 2};
+        for (size_t i = 0; i < 4; i++) {
+            Node temp;
+            temp.read(file, root.children[c_ids[i]]);
+            rebuildByZ(z, temp, image, file);
+        }
+        image.display();
+    }
+
+    void rebuildByZ (int z, Node root, CImg<char> &image, fstream &file) {
+        if (root.type != middle ) {
+            if (get<2>(root.p_start) <= z && get<2>(root.p_end) >= z) {
+                for (u_short j = get<1>(root.p_start); j <= get<1>(root.p_end); j++) {
+                    for (u_short i = get<0>(root.p_start); i <= get<0>(root.p_end); i++) {
+                        image(i, j) = root.type;
+                    }
+                }
+            }
+            
+        } else {
+            int z_m = (get<2>(root.p_end) + get<2>(root.p_start))/2;
+
+            vector<u_short> c_ids;
+            if (z <= z_m) c_ids = {0, 4, 7, 3};
+            else c_ids = {1, 5, 6, 2};
+            for (size_t i = 0; i < 4; i++) {
+                if (root.children[c_ids[i]] != -1) {
+                    Node temp;
+                    temp.read(file, root.children[c_ids[i]]);
+                    rebuildByZ(z, temp, image, file);
+                }
+            }
+        }
+
+    }
+
+
+    void rebuildAll() {
         fstream file(filename.c_str(), ios::binary | ios::in); 
         Node root;
         root.read(file, 0);
@@ -60,15 +200,16 @@ public:
         int dim_x = get<0>(root.p_end) + 1;
         CImg<char> images[dim_z];
         for (int i = 0; i < dim_z; i++) {
-            images[i] = CImg (dim_x, dim_y);
+            images[i] = CImg<char> (dim_x, dim_y);
         }
-        rebuild (root, images, file);
+        rebuildAll (root, images, file);
         for (int i = 0; i < dim_z; i++) {
             images[i].display();
         }
+
     }
 
-    void rebuild(Node root, CImg<char> *images, fstream &file){
+    void rebuildAll(Node root, CImg<char> *images, fstream &file){
         if (root.type == full || root.type == empty) {
             //cout << "nodo pintado" << endl;
             for (int z = get<2>(root.p_start); z <= get<2>(root.p_end); z++)
@@ -80,7 +221,7 @@ public:
                 if (root.children[i] != -1) {
                     Node child;
                     child.read (file, root.children[i]);
-                    rebuild (child, images, file);
+                    rebuildAll (child, images, file);
                 }
             }
         }
@@ -95,7 +236,8 @@ public:
     }
 
     OcTree(Cube &img) {
-        fstream file("octree.bin", ios::trunc | ios::binary | ios::in | ios::out);
+        filename = "octree.bin";
+        fstream file(filename, ios::trunc | ios::binary | ios::in | ios::out);
         u_short size_x = img[0][0].size() - 1;
         u_short size_y = img[0].size() - 1;
         u_short size_z = img.size() - 1;
