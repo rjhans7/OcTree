@@ -14,6 +14,26 @@ typedef unsigned char u_char;
 typedef bool cube_type;
 typedef tuple <u_short, u_short, u_short> Point;
 typedef vector<vector<vector<cube_type>>> Cube;
+
+
+struct Plane {
+    Point normal;
+    Point p1;
+    Point p2;
+    u_short d;
+    Plane(Point normal, Point p1, Point p2): normal(normal), p1(p1), p2(p2){
+        d = 0 - (get<0>(normal)*get<0>(p1) +
+                 get<1>(normal)*get<1>(p1) +
+                 get<2>(normal)*get<2>(p1));
+    }
+    bool checker(Point k) {
+        u_short r = d + (get<0>(normal)*get<0>(k) +
+            get<1>(normal)*get<1>(k) +
+            get<2>(normal)*get<2>(k));
+        return (r == 0);
+    }
+};
+
 class OcTree {
 private:
 
@@ -54,6 +74,61 @@ public:
     OcTree (string filename) {
         this->filename = filename;        
     }
+
+    bool intersect (Plane plano, Node root) {
+        if (get<0>(plano.p1) >= get<0>(root.p_start) && get<0> (plano.p1) <=  get<0>(root.p_end) &&
+            get<1>(plano.p1) >= get<1>(root.p_start) && get<1> (plano.p1) <=  get<1>(root.p_end) &&
+            get<2>(plano.p1) >= get<2>(root.p_start) && get<2> (plano.p1) <=  get<2>(root.p_end) &&
+            get<0>(plano.p2) >= get<0>(root.p_start) && get<0> (plano.p2) <=  get<0>(root.p_end) &&
+            get<1>(plano.p2) >= get<1>(root.p_start) && get<1> (plano.p2) <=  get<1>(root.p_end) &&
+            get<2>(plano.p2) >= get<2>(root.p_start) && get<2> (plano.p2) <=  get<2>(root.p_end))
+            return true;
+        return false;
+    }
+
+
+
+    vector<Node> make_cut(Point p1, Point p2, Point p3, Point p4){
+        vector<Node> nodos;
+        fstream file(filename.c_str(), ios::binary | ios::in);
+        Node root; root.read(file, 0);
+
+        Point v1 = {get<0>(p2) - get<0>(p1),
+                    get<1>(p2) - get<1>(p1),
+                    get<2>(p2) - get<2>(p1)};
+
+        Point v2 = {get<0>(p3) - get<0>(p2),
+                    get<1>(p3) - get<1>(p2),
+                    get<2>(p3) - get<2>(p2)};
+
+        Point normal = {get<1>(v1)*get<2> (v2) - get<2>(v1)*get<1>(v2),
+                        -1 * (get<2>(v1)*get<0> (v2) - get<0>(v1)*get<2>(v2)),
+                        get<0>(v1)*get<1> (v2) - get<1>(v1)*get<0>(v2)};
+
+        Plane plane(normal, p1, p4);
+        make_cut(plane, root, nodos);
+    }
+
+    void make_cut (Plane plane,  Node root, vector<Node> &nodos) {
+        if (intersect(plane, root)) {
+            if (root.type != middle) {
+                nodos.push_back(root);
+                return;
+            }
+            fstream file(filename.c_str(), ios::binary | ios::in);
+            Node curr;
+            for (int i = 0; i < 8; i++) {
+                if (root.children[i] != -1) {
+
+                    curr.read(file, root.children[i]);
+                    make_cut(plane,curr, nodos)
+                    // reajustar plano
+                }
+            }
+        }
+        return;
+    }
+
 
     void rebuildByX (int x) {
         fstream file(filename.c_str(), ios::binary | ios::in);
