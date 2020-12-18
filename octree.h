@@ -3,13 +3,17 @@
 #include <vector>
 #include "CImg/CImg.h"
 
-#define N_IMAGES 8
+
 
 using namespace cimg_library;
 using namespace std;
+int ns = 0;
 
-typedef tuple <int, int, int> Point;
-typedef vector<vector<vector<int>>> Cube;
+typedef unsigned short u_short;
+typedef unsigned char u_char;
+typedef bool cube_type;
+typedef tuple <u_short, u_short, u_short> Point;
+typedef vector<vector<vector<cube_type>>> Cube;
 class OcTree {
 private:
 
@@ -45,34 +49,179 @@ private:
     };
 
     long nNodes = 0;
-
+    string filename;
 public:
     OcTree (string filename) {
+        this->filename = filename;        
+    }
+
+    void rebuildByX (int x) {
+        fstream file(filename.c_str(), ios::binary | ios::in);
+        Node root;
+        root.read(file, 0);
+        CImg<char> image (get<1>(root.p_end) + 1, get<2>(root.p_end) + 1);
+        int x_m = (get<0>(root.p_end) + get<0>(root.p_start))/2;
+
+        vector<u_short> c_ids;
+        if (x <= x_m) c_ids = {0, 1, 5, 4};
+        else c_ids = {3, 2, 6, 7};        
+        for (size_t i = 0; i < 4; i++) {
+            Node temp;
+            temp.read(file, root.children[c_ids[i]]);
+            rebuildByX(x, temp, image, file);
+        }
+        
+        image.display();
+
+    }
+
+    void rebuildByX (int x, Node root, CImg<char> &image, fstream &file) {
+        if (root.type != middle ) {
+            if (get<0>(root.p_start) <= x && get<0>(root.p_end) >= x) {
+                for (u_short k = get<2>(root.p_start); k <= get<2>(root.p_end); k++) {
+                    for (u_short j = get<1>(root.p_start); j <= get<1>(root.p_end); j++) {
+                        image(j, k) = root.type;
+                    }
+                }
+            }
+            
+        } else {
+            int x_m = (get<0>(root.p_end) + get<0>(root.p_start))/2;
+
+            vector<u_short> c_ids;
+            if (x <= x_m) c_ids = {0, 1, 5, 4};
+            else c_ids = {3, 2, 6, 7};
+            for (size_t i = 0; i < 4; i++) {
+                if (root.children[c_ids[i]] != -1) {
+                    Node temp;
+                    temp.read(file, root.children[c_ids[i]]);
+                    rebuildByX(x, temp, image, file);
+                }
+            }
+        }
+
+    }
+
+    void rebuildByY (int y) {
         fstream file(filename.c_str(), ios::binary | ios::in); 
         Node root;
         root.read(file, 0);
-        CImg<char> images[N_IMAGES];
-        for (int i = 0; i < N_IMAGES; i++) {
-            images[i] = CImg (8, 8);
+        CImg<char> image (get<0>(root.p_end) + 1, get<2>(root.p_end) + 1);
+        int y_m = (get<1>(root.p_end) + get<1>(root.p_start))/2;
+
+        size_t i = (y <= y_m)? 0 : 4;
+        size_t i_e = (y <= y_m)? 4 : 8;
+        for (; i < i_e; i++) {
+            Node temp;
+            temp.read(file, root.children[i]);
+            rebuildByY(y, temp, image, file);
         }
-        rebuild (root, images, file);
-        for (int i = 0; i < 8; i++)
-            images[i].display ();
+        image.display();
     }
 
-    void rebuild(Node root, CImg<char> *images, fstream &file){
+    void rebuildByY (int y, Node root, CImg<char> &image, fstream &file) {
+        if (root.type != middle ) {
+            if (get<1>(root.p_start) <= y && get<1>(root.p_end) >= y) {
+                for (u_short k = get<2>(root.p_start); k <= get<2>(root.p_end); k++) {
+                    for (u_short i = get<0>(root.p_start); i <= get<0>(root.p_end); i++) {
+                        image(i, k) = root.type;
+                    }
+                }
+            }
+            
+        } else {
+            int y_m = (get<1>(root.p_end) + get<1>(root.p_start))/2;
+            
+            size_t i = (y <= y_m)? 0 : 4;
+            size_t i_e = (y <= y_m)? 4 : 8;
+            for (; i < i_e; i++) {
+                if (root.children[i] != -1) {
+                    Node temp;
+                    temp.read(file, root.children[i]);
+                    rebuildByY(y, temp, image, file);
+                }
+            }
+        }
+
+    }
+
+    void rebuildByZ (int z) {
+        fstream file(filename.c_str(), ios::binary | ios::in); 
+        Node root;
+        root.read(file, 0);
+        CImg<char> image (get<0>(root.p_end) + 1, get<1>(root.p_end) + 1);
+        int z_m = (get<2>(root.p_end) + get<2>(root.p_start))/2;
+
+        vector<u_short> c_ids;
+        if (z <= z_m) c_ids = {0, 4, 7, 3};
+        else c_ids = {1, 5, 6, 2};
+        for (size_t i = 0; i < 4; i++) {
+            Node temp;
+            temp.read(file, root.children[c_ids[i]]);
+            rebuildByZ(z, temp, image, file);
+        }
+        image.display();
+    }
+
+    void rebuildByZ (int z, Node root, CImg<char> &image, fstream &file) {
+        if (root.type != middle ) {
+            if (get<2>(root.p_start) <= z && get<2>(root.p_end) >= z) {
+                for (u_short j = get<1>(root.p_start); j <= get<1>(root.p_end); j++) {
+                    for (u_short i = get<0>(root.p_start); i <= get<0>(root.p_end); i++) {
+                        image(i, j) = root.type;
+                    }
+                }
+            }
+            
+        } else {
+            int z_m = (get<2>(root.p_end) + get<2>(root.p_start))/2;
+
+            vector<u_short> c_ids;
+            if (z <= z_m) c_ids = {0, 4, 7, 3};
+            else c_ids = {1, 5, 6, 2};
+            for (size_t i = 0; i < 4; i++) {
+                if (root.children[c_ids[i]] != -1) {
+                    Node temp;
+                    temp.read(file, root.children[c_ids[i]]);
+                    rebuildByZ(z, temp, image, file);
+                }
+            }
+        }
+
+    }
+
+
+    void rebuildAll() {
+        fstream file(filename.c_str(), ios::binary | ios::in); 
+        Node root;
+        root.read(file, 0);
+        int dim_z = get<2>(root.p_end) + 1;
+        int dim_y = get<1>(root.p_end) + 1;
+        int dim_x = get<0>(root.p_end) + 1;
+        CImg<char> images[dim_z];
+        for (int i = 0; i < dim_z; i++) {
+            images[i] = CImg<char> (dim_x, dim_y);
+        }
+        rebuildAll (root, images, file);
+        for (int i = 0; i < dim_z; i++) {
+            images[i].display();
+        }
+
+    }
+
+    void rebuildAll(Node root, CImg<char> *images, fstream &file){
         if (root.type == full || root.type == empty) {
-            cout << "nodo pintado" << endl;
+            //cout << "nodo pintado" << endl;
             for (int z = get<2>(root.p_start); z <= get<2>(root.p_end); z++)
                 rebuild_img (root, z, images);
         }
         else {
             for (int i = 0; i < 8; i++) {
-                cout << root.children[i] << endl;
+                //cout << root.children[i] << endl;
                 if (root.children[i] != -1) {
                     Node child;
                     child.read (file, root.children[i]);
-                    rebuild (child, images, file);
+                    rebuildAll (child, images, file);
                 }
             }
         }
@@ -87,10 +236,11 @@ public:
     }
 
     OcTree(Cube &img) {
-        fstream file("octree.bin", ios::trunc | ios::binary | ios::in | ios::out);
-        int size_x = img[0][0].size() - 1;
-        int size_y = img[0].size() - 1;
-        int size_z = img.size() - 1;
+        filename = "octree.bin";
+        fstream file(filename, ios::trunc | ios::binary | ios::in | ios::out);
+        u_short size_x = img[0][0].size() - 1;
+        u_short size_y = img[0].size() - 1;
+        u_short size_z = img.size() - 1;
         Node root ({0, 0, 0}, {size_x, size_y, size_z});
         root.write(file, nNodes);
         nNodes++;
@@ -99,80 +249,105 @@ public:
         file.close();
     }
 
-    void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Node &root, Cube &img, fstream &file) {
-        if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
-            root.type = img[z_min][y_min][x_min] == 0 ? empty : full;
+    void build(u_short x_min, u_short y_min, u_short z_min, u_short x_max, u_short y_max, u_short z_max, Node &root, Cube &img, fstream &file) {
+        //cout << "building ... " << ns++ << endl;
+		if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
+            root.type = img[z_min][y_min][x_min] == 0 ? full : empty;
+            root.write(file, root.id);
             return;
         }
 
-        int x_m = (x_max + x_min) / 2;
-        int y_m = (y_max + y_min) / 2;
-        int z_m = (z_max + z_min) / 2;
+        u_short x_m = (x_max + x_min) / 2;
+        u_short y_m = (y_max + y_min) / 2;
+        u_short z_m = (z_max + z_min) / 2;
 
-        Node child_0 ({x_min, y_min, z_min}, {x_m, y_m, z_m});
-        child_0.write(file, nNodes);
-        root.children[0] = nNodes;
-        
-        nNodes++;
-        Node child_1 ({x_min, y_min, z_m + 1}, {x_m, y_m, z_max});
-        child_1.write(file, nNodes);
-        root.children[1] = nNodes;
-        
-        nNodes++;
-        Node child_2 ({x_m + 1, y_min, z_m+1}, {x_max, y_m, z_max});
-        child_2.write(file, nNodes);
-        root.children[2] = nNodes;
-        
-        nNodes++;
-        Node child_3 ({x_m + 1, y_min, z_min}, {x_max, y_m, z_m});
-        child_3.write(file, nNodes);
-        root.children[3] = nNodes; 
-        
-        nNodes++;
-        Node child_4({x_min, y_m, z_min}, {x_m, y_max, z_m});
-        child_4.write(file, nNodes);
-        root.children[4] = nNodes;
-        
-        nNodes++;
-        Node child_5({x_min, y_min, z_m + 1}, {x_m, y_max, z_max});
-        child_5.write(file, nNodes);
-        root.children[5] = nNodes;
-        
-        nNodes++;
-        Node child_6({x_m + 1, y_m + 1, z_m + 1}, {x_max, y_max, z_max});
-        child_6.write(file, nNodes);
-        root.children[6] = nNodes;
-        
-        nNodes++;
-        Node child_7 ({x_m + 1, y_m + 1, z_min}, {x_max, y_max, z_m});
-        child_7.write(file, nNodes);
-        root.children[7] = nNodes; 
-        
-        nNodes++;
+        if ((x_min <= x_m) && (y_min <= y_m) && (z_min <= z_m)) {
+            Node child_0({x_min, y_min, z_min}, {x_m, y_m, z_m});
+            child_0.write(file, nNodes);
+            root.children[0] = nNodes;
+            nNodes++;
+            build(x_min, y_min, z_min, x_m, y_m, z_m, child_0, img, file);
+
+        }
+
+        if ((x_min <= x_m) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
+            Node child_1({x_min, y_min, z_m + 1}, {x_m, y_m, z_max});
+            child_1.write(file, nNodes);
+            root.children[1] = nNodes;
+            nNodes++;
+            build(x_min, y_min, z_m + 1, x_m, y_m, z_max, child_1, img, file);
+        }
+
+        if (((x_m + 1) <= x_max) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
+            Node child_2({x_m + 1, y_min, z_m + 1}, {x_max, y_m, z_max});
+            child_2.write(file, nNodes);
+            root.children[2] = nNodes;
+            nNodes++;
+            build(x_m + 1, y_min, z_m + 1, x_max, y_m, z_max, child_2, img, file);
+        }
+
+        if (((x_m + 1) <= x_max) && (y_min <= y_m) && (z_min <= z_m)) {
+            Node child_3({x_m + 1, y_min, z_min}, {x_max, y_m, z_m});
+            child_3.write(file, nNodes);
+            root.children[3] = nNodes;
+            nNodes++;
+            build(x_m + 1, y_min, z_min, x_max, y_m, z_m, child_3, img, file);
+        }
+
+        if ((x_min <= x_m) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
+            Node child_4({x_min, y_m + 1, z_min}, {x_m, y_max, z_m});
+            child_4.write(file, nNodes);
+            root.children[4] = nNodes;
+            nNodes++;
+            build(x_min, y_m + 1, z_min, x_m, y_max, z_m, child_4, img, file);
+        }
+
+        if ((x_min <= x_m) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
+            Node child_5({x_min, y_m + 1, z_m + 1}, {x_m, y_max, z_max});
+            child_5.write(file, nNodes);
+            root.children[5] = nNodes;
+            nNodes++;
+            build(x_min, y_m + 1, z_m + 1, x_m, y_max, z_max, child_5, img, file);
+        }
+
+        if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
+            Node child_6({x_m + 1, y_m + 1, z_m + 1}, {x_max, y_max, z_max});
+            child_6.write(file, nNodes);
+            root.children[6] = nNodes;
+            nNodes++;
+            build(x_m + 1, y_m + 1, z_m + 1, x_max, y_max, z_max, child_6, img, file);
+        }
+
+        if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
+            Node child_7({x_m + 1, y_m + 1, z_min}, {x_max, y_max, z_m});
+            child_7.write(file, nNodes);
+            root.children[7] = nNodes;
+            nNodes++;
+            build(x_m + 1, y_m + 1, z_min, x_max, y_max, z_m, child_7, img, file);
+        }
         root.write(file, root.id);
 
-        build (x_min, y_min, z_min, x_m, y_m, z_m, child_0, img, file);
-        build (x_min, y_min, z_m + 1, x_m, y_m, z_max,child_1, img, file);
-        build (x_m+1, y_min, z_m+1, x_max, y_m, z_max, child_2, img, file);
-        build (x_min + 1, y_min, z_min, x_max, y_m, z_m, child_3, img, file);
-        build (x_min, y_m, z_min, x_m, y_max, z_m, child_4, img, file);
-        build (x_min, y_min, z_m + 1, x_m, y_max, z_max, child_5, img, file);
-        build (x_m + 1, y_m + 1, z_m + 1, x_max, y_max, z_max, child_6, img, file);
-        build (x_m + 1, y_m + 1, z_min, x_max, y_max, z_m, child_7, img, file);
+        //build (x_min, y_min, z_min, x_m, y_m, z_m, child_0, img, file);
+        //build (x_min, y_min, z_m + 1, x_m, y_m, z_max,child_1, img, file);
+        //build (x_m + 1, y_min, z_m + 1, x_max, y_m, z_max, child_2, img, file);
+        //build (x_m + 1, y_min, z_min, x_max, y_m, z_m, child_3, img, file);
+        //build (x_min, y_m + 1, z_min, x_m, y_max, z_m, child_4, img, file);
+        //build (x_min, y_m + 1, z_m + 1, x_m, y_max, z_max, child_5, img, file);
+        //build (x_m + 1, y_m + 1, z_m + 1, x_max, y_max, z_max, child_6, img, file);
+        //build (x_m + 1, y_m + 1, z_min, x_max, y_max, z_m, child_7, img, file);
     }
 
 
-    bool check (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Cube &img) {
+    bool check (u_short &x_min, u_short &y_min, u_short &z_min, u_short &x_max, u_short &y_max, u_short &z_max, Cube &img) {
         bool c = img[z_min][y_min][x_min];
 
-        for (int z = z_min; z <= z_max; ++z) {
-            for (int y = y_min; y <= y_max; ++y) {
-                for (int x = x_min; x <= x_max; ++x) {
+        for (u_short z = z_min; z <= z_max; ++z) {
+            for (u_short y = y_min; y <= y_max; ++y) {
+                for (u_short x = x_min; x <= x_max; ++x) {
                     if (img[z][y][x] != c) return false;
                 }
             }
         }
-
         return true;
     }
 

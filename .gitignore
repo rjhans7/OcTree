@@ -353,3 +353,11 @@ MigrationBackup/
 a.out.dSYM/
 main
 *.bin
+myBash.sh
+remove_spaces.sh
+a.out
+cubo.txt
+files.sh
+testsqrt.cpp
+.idea/
+cmake-build-debug
