@@ -97,5 +97,5 @@ int main(int argc,char **argv) {
 	// oct2.rebuildByX(206);
 	// oct2.rebuildByY(206);
 	// oct2.rebuildByZ(20);
-	oct.make_cut({0, 0, 0},{512, 0, 40},{512, 512, 40}, {512, 512, 0});
+	oct.make_cut({0, 0, 0},{511, 0, 39},{511, 511, 39}, {511, 511, 0});
 }

@@ -11,7 +11,7 @@ int ns = 0;
 
 typedef unsigned char u_char;
 typedef bool cube_type;
-typedef tuple <short, short, short> Punto;
+typedef tuple <short, short, short> Point;
 typedef vector<vector<vector<cube_type>>> Cube;
 
 
@@ -128,7 +128,6 @@ public:
 
         // TODO: pthreads 
         make_cut(plane, root, nodos, file);
-
         return nodos;
     }
 
