@@ -11,19 +11,19 @@ int ns = 0;
 
 typedef unsigned char u_char;
 typedef bool cube_type;
-typedef tuple <short, short, short> Point;
+typedef tuple <int, int, int> Point;
 typedef vector<vector<vector<cube_type>>> Cube;
 
 
 struct Punto {
-    short x, y, z;
+    int x, y, z;
 
     Punto(){}
 
-    Punto (short x, short y, short z) : x (x), y (y), z (z) {}
+    Punto (int x, int y, int z) : x (x), y (y), z (z) {}
 
     /* Producto Escalar */
-    short operator*(const Punto &p2) {
+    int operator*(const Punto &p2) {
         return x * p2.x + y * p2.y + z * p2.z;
     }
 
@@ -50,20 +50,20 @@ ostream& operator<< (ostream &out, const Punto &p) {
 struct Plane {
     Punto normal;
     Punto p1, p2, p3, p4;
-    short d;
+    int d;
     
     Plane(Punto p1, Punto p2, Punto p3, Punto p4): p1(p1), p2(p2), p3(p3), p4(p4) {
         Punto v1 = p2 - p1;
-        Punto v2 = p3 - p2;
+        Punto v2 = p3 - p1;
         normal = v1 % v2;
         d = 0 - normal * p1;
     }
     bool checker(Punto k) {
-        short r = d + normal * k;
+        int r = d + normal * k;
         return (r == 0);
     }
 
-    short distance (Punto k) {
+    int distance (Punto k) {
         return (d + normal * k) / sqrt((normal.x << 1) + (normal.y << 1) + (normal.z << 1));
     }
 };
@@ -157,7 +157,7 @@ public:
         CImg<char> image (root.p_end.y + 1, root.p_end.z + 1);
         int x_m = (root.p_end.x + root.p_start.x)/2;
 
-        vector<short> c_ids;
+        vector<int> c_ids;
         if (x <= x_m) c_ids = {0, 1, 5, 4};
         else c_ids = {3, 2, 6, 7};        
         for (size_t i = 0; i < 4; i++) {
@@ -173,8 +173,8 @@ public:
     void rebuildByX (int x, Node root, CImg<char> &image, fstream &file) {
         if (root.type != middle ) {
             if (root.p_start.x <= x && root.p_end.x >= x) {
-                for (short k = root.p_start.z; k <= root.p_end.z; k++) {
-                    for (short j = root.p_start.y; j <= root.p_end.y; j++) {
+                for (int k = root.p_start.z; k <= root.p_end.z; k++) {
+                    for (int j = root.p_start.y; j <= root.p_end.y; j++) {
                         image(j, k) = root.type;
                     }
                 }
@@ -183,7 +183,7 @@ public:
         } else {
             int x_m = (root.p_end.x + root.p_start.x)/2;
 
-            vector<short> c_ids;
+            vector<int> c_ids;
             if (x <= x_m) c_ids = {0, 1, 5, 4};
             else c_ids = {3, 2, 6, 7};
             for (size_t i = 0; i < 4; i++) {
@@ -217,8 +217,8 @@ public:
     void rebuildByY (int y, Node root, CImg<char> &image, fstream &file) {
         if (root.type != middle ) {
             if (root.p_start.y <= y && root.p_end.y >= y) {
-                for (short k = root.p_start.z; k <= root.p_end.z; k++) {
-                    for (short i = root.p_start.x; i <= root.p_end.x; i++) {
+                for (int k = root.p_start.z; k <= root.p_end.z; k++) {
+                    for (int i = root.p_start.x; i <= root.p_end.x; i++) {
                         image(i, k) = root.type;
                     }
                 }
@@ -247,7 +247,7 @@ public:
         CImg<char> image (root.p_end.x + 1, root.p_end.y + 1);
         int z_m = (root.p_end.z + root.p_start.z)/2;
 
-        vector<short> c_ids;
+        vector<int> c_ids;
         if (z <= z_m) c_ids = {0, 4, 7, 3};
         else c_ids = {1, 5, 6, 2};
         for (size_t i = 0; i < 4; i++) {
@@ -261,8 +261,8 @@ public:
     void rebuildByZ (int z, Node root, CImg<char> &image, fstream &file) {
         if (root.type != middle ) {
             if (root.p_start.z <= z && root.p_end.z >= z) {
-                for (short j = root.p_start.y; j <= root.p_end.y; j++) {
-                    for (short i = root.p_start.x; i <= root.p_end.x; i++) {
+                for (int j = root.p_start.y; j <= root.p_end.y; j++) {
+                    for (int i = root.p_start.x; i <= root.p_end.x; i++) {
                         image(i, j) = root.type;
                     }
                 }
@@ -271,7 +271,7 @@ public:
         } else {
             int z_m = (root.p_end.z + root.p_start.z)/2;
 
-            vector<short> c_ids;
+            vector<int> c_ids;
             if (z <= z_m) c_ids = {0, 4, 7, 3};
             else c_ids = {1, 5, 6, 2};
             for (size_t i = 0; i < 4; i++) {
@@ -333,9 +333,9 @@ public:
     OcTree(Cube &img) {
         filename = "octree.bin";
         fstream file(filename, ios::trunc | ios::binary | ios::in | ios::out);
-        short size_x = img[0][0].size() - 1;
-        short size_y = img[0].size() - 1;
-        short size_z = img.size() - 1;
+        int size_x = img[0][0].size() - 1;
+        int size_y = img[0].size() - 1;
+        int size_z = img.size() - 1;
         Node root ({0, 0, 0}, {size_x, size_y, size_z});
         root.write(file, nNodes);
         nNodes++;
@@ -344,16 +344,16 @@ public:
         file.close();
     }
 
-    void build(short x_min, short y_min, short z_min, short x_max, short y_max, short z_max, Node &root, Cube &img, fstream &file) {
+    void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Node &root, Cube &img, fstream &file) {
 		if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
             root.type = img[z_min][y_min][x_min] == 0 ? full : empty;
             root.write(file, root.id);
             return;
         }
 
-        short x_m = (x_max + x_min) / 2;
-        short y_m = (y_max + y_min) / 2;
-        short z_m = (z_max + z_min) / 2;
+        int x_m = (x_max + x_min) / 2;
+        int y_m = (y_max + y_min) / 2;
+        int z_m = (z_max + z_min) / 2;
 
         if ((x_min <= x_m) && (y_min <= y_m) && (z_min <= z_m)) {
             Node child_0({x_min, y_min, z_min}, {x_m, y_m, z_m});
@@ -423,12 +423,12 @@ public:
     }
 
 
-    bool check (short &x_min, short &y_min, short &z_min, short &x_max, short &y_max, short &z_max, Cube &img) {
+    bool check (int &x_min, int &y_min, int &z_min, int &x_max, int &y_max, int &z_max, Cube &img) {
         bool c = img[z_min][y_min][x_min];
 
-        for (short z = z_min; z <= z_max; ++z) {
-            for (short y = y_min; y <= y_max; ++y) {
-                for (short x = x_min; x <= x_max; ++x) {
+        for (int z = z_min; z <= z_max; ++z) {
+            for (int y = y_min; y <= y_max; ++y) {
+                for (int x = x_min; x <= x_max; ++x) {
                     if (img[z][y][x] != c) return false;
                 }
             }
