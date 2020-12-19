@@ -11,7 +11,7 @@ int ns = 0;
 
 typedef unsigned char u_char;
 typedef bool cube_type;
-typedef tuple <short, short, short> Point;
+typedef tuple <short, short, short> Punto;
 typedef vector<vector<vector<cube_type>>> Cube;
 
 
@@ -49,15 +49,22 @@ ostream& operator<< (ostream &out, const Punto &p) {
     }
 struct Plane {
     Punto normal;
-    Punto p1;
-    Punto p2;
+    Punto p1, p2, p3, p4;
     short d;
-    Plane(Punto normal, Punto p1, Punto p2): normal(normal), p1(p1), p2(p2){
-        d = 0 - normal*p1;
+    
+    Plane(Punto p1, Punto p2, Punto p3, Punto p4): p1(p1), p2(p2), p3(p3), p4(p4) {
+        Punto v1 = p2 - p1;
+        Punto v2 = p3 - p2;
+        normal = v1 % v2;
+        d = 0 - normal * p1;
     }
     bool checker(Punto k) {
-        short r = d + normal*k;
+        short r = d + normal * k;
         return (r == 0);
+    }
+
+    short distance (Punto k) {
+        return (d + normal * k) / sqrt((normal.x << 1) + (normal.y << 1) + (normal.z << 1));
     }
 };
 
@@ -99,61 +106,49 @@ private:
     string filename;
 public:
     OcTree (string filename) {
-        this->filename = filename;        
+        this->filename = filename;
     }
 
-    // bool intersect (Plane plano, Node root) {
-    //     if (get<0>(plano.p1) >= root.p_start.x && get<0> (plano.p1) <=  root.p_end.x &&
-    //         get<1>(plano.p1) >= root.p_start.y && get<1> (plano.p1) <=  root.p_end.y &&
-    //         get<2>(plano.p1) >= root.p_start.z && get<2> (plano.p1) <=  root.p_end.z &&
-    //         get<0>(plano.p2) >= root.p_start.x && get<0> (plano.p2) <=  root.p_end.x &&
-    //         get<1>(plano.p2) >= root.p_start.y && get<1> (plano.p2) <=  root.p_end.y &&
-    //         get<2>(plano.p2) >= root.p_start.z && get<2> (plano.p2) <=  root.p_end.z)
-    //         return true;
-    //     return false;
-    // }
+    bool intersect (Plane plano, Node root) {
+        float diagonal = sqrt(((root.p_end.x - root.p_start.x) << 1) + ((root.p_end.y - root.p_start.y) << 1) + ((root.p_end.z - root.p_start.z) << 1));
+        float distance = plano.distance(root.p_end);
+        
+        if (distance <= diagonal) return true;
+
+        return false;
+    }
 
 
+    vector<Node> make_cut(Punto p1, Punto p2, Punto p3, Punto p4){
+        vector<Node> nodos;
+        fstream file(filename.c_str(), ios::binary | ios::in);
+        Node root; root.read(file, 0);
 
-    // vector<Node> make_cut(Point p1, Point p2, Point p3, Point p4){
-    //     vector<Node> nodos;
-    //     fstream file(filename.c_str(), ios::binary | ios::in);
-    //     Node root; root.read(file, 0);
+        Plane plane(p1, p2, p3, p4);
 
-    //     Point v1 = {get<0>(p2) - get<0>(p1),
-    //                 get<1>(p2) - get<1>(p1),
-    //                 get<2>(p2) - get<2>(p1)};
+        // TODO: pthreads 
+        make_cut(plane, root, nodos, file);
 
-    //     Point v2 = {get<0>(p3) - get<0>(p2),
-    //                 get<1>(p3) - get<1>(p2),
-    //                 get<2>(p3) - get<2>(p2)};
+        return nodos;
+    }
 
-    //     Point normal = {get<1>(v1)*get<2> (v2) - get<2>(v1)*get<1>(v2),
-    //                     -1 * (get<2>(v1)*get<0> (v2) - get<0>(v1)*get<2>(v2)),
-    //                     get<0>(v1)*get<1> (v2) - get<1>(v1)*get<0>(v2)};
+    void make_cut (Plane plane,  Node root, vector<Node> &nodos, fstream &file) {
+        if (intersect(plane, root)) {
+            if (root.type != middle) {
+                nodos.push_back(root);
+                return;
+            }
 
-    //     Plane plane(normal, p1, p4);
-    //     make_cut(plane, root, nodos);
-    // }
-
-    // void make_cut (Plane plane,  Node root, vector<Node> &nodos) {
-    //     if (intersect(plane, root)) {
-    //         if (root.type != middle) {
-    //             nodos.push_back(root);
-    //             return;
-    //         }
-    //         fstream file(filename.c_str(), ios::binary | ios::in);
-    //         Node curr;
-    //         for (int i = 0; i < 8; i++) {
-    //             if (root.children[i] != -1) {
-    //                 curr.read(file, root.children[i]);
-    //                 make_cut(plane,curr, nodos)
-                    
-    //             }
-    //         }
-    //     }
-    //     return;
-    // }
+            Node curr;
+            for (int i = 0; i < 8; i++) {
+                if (root.children[i] != -1) {
+                    curr.read(file, root.children[i]);
+                    make_cut(plane,curr, nodos, file);
+                }
+            }
+        }
+        return;
+    }
 
 
     void rebuildByX (int x) {

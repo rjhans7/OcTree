@@ -87,14 +87,15 @@ int main(int argc,char **argv) {
 	auto cubo = build_cube(file_i, dis, threshold);
  	OcTree oct(cubo);
 	//visualizar(cubo, "cubo.txt");
-	OcTree oct2 ("octree.bin");
+	//OcTree oct2 ("octree.bin");
 	//oct2.rebuildAll();
     // for (int i = 0; i < 8; i++) {
 	// 	oct2.rebuildByX(i);
 	// 	oct2.rebuildByY(i);
 	// 	oct2.rebuildByZ(i);
 	// }
-	oct2.rebuildByX(206);
-	oct2.rebuildByY(206);
-	oct2.rebuildByZ(20);
+	// oct2.rebuildByX(206);
+	// oct2.rebuildByY(206);
+	// oct2.rebuildByZ(20);
+	oct.make_cut({0, 0, 0},{512, 0, 40},{512, 512, 40}, {512, 512, 0});
 }
