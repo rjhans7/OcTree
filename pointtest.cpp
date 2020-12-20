@@ -4,7 +4,7 @@
 using namespace std;
 
 int main () {
-    Punto p1 (1, 4, 5);
+    Point p1 (1, 4, 5);
     Punto p2 (3, 1, 3);
     cout << "p1: ";
     cout << p1;

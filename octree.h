@@ -1,5 +1,4 @@
 #pragma once
-#define cimg_use_openmp
 
 #include <vector>
 #include <thread>
@@ -21,15 +20,15 @@ class OcTree {
 private:
 
     enum n_type {full, empty, middle};
-    struct Node {
+    struct Octant {
         long id;
-        Punto p_start, p_end;
+        Point p_start, p_end;
         n_type type; // color
         long children[8];
 
-        Node(){};
+        Octant(){};
 
-        Node(Punto p_start, Punto p_end){
+        Octant(Point p_start, Point p_end){
             this->p_start = p_start;
             this->p_end = p_end;
             type = middle;
@@ -41,17 +40,17 @@ private:
 
         void write(fstream &fileout, long n) {
             id = n;
-            fileout.seekp(n*sizeof(Node), ios::beg);
-            fileout.write((char *) this, sizeof(Node));
+            fileout.seekp(n*sizeof(Octant), ios::beg);
+            fileout.write((char *) this, sizeof(Octant));
         }
 
         void read(fstream &fileIn, long n) {
-            fileIn.seekg(n*sizeof(Node), ios::beg);
-            fileIn.read((char *) this, sizeof(Node));
+            fileIn.seekg(n*sizeof(Octant), ios::beg);
+            fileIn.read((char *) this, sizeof(Octant));
         }
     };
 
-    long nNodes = 0;
+    long nOctants = 0;
     string filename;
 
 public:
@@ -67,9 +66,9 @@ public:
         int size_x = img[0][0].size() - 1;
         int size_y = img[0].size() - 1;
         int size_z = img.size() - 1;
-        Node root ({0, 0, 0}, {size_x, size_y, size_z});
-        root.write(file, nNodes);
-        nNodes++;
+        Octant root ({0, 0, 0}, {size_x, size_y, size_z});
+        root.write(file, nOctants);
+        nOctants++;
 
         first_build (0, 0, 0, size_x, size_y, size_z, root, img, file);
             
@@ -77,7 +76,7 @@ public:
     }
 
     // Deploys 8 threads;
-    void first_build (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Node &root, Cube &img, fstream &file) {
+    void first_build (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Octant &root, Cube &img, fstream &file) {
 		if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
             root.type = img[z_min][y_min][x_min] == 0 ? full : empty;
             root.write(file, root.id);
@@ -94,10 +93,10 @@ public:
 
         
         if ((x_min <= x_m) && (y_min <= y_m) && (z_min <= z_m)) {
-            Node child_0({x_min, y_min, z_min}, {x_m, y_m, z_m});
-            child_0.write(file, nNodes);
-            root.children[0] = nNodes;
-            nNodes++;
+            Octant child_0({x_min, y_min, z_min}, {x_m, y_m, z_m});
+            child_0.write(file, nOctants);
+            root.children[0] = nOctants;
+            nOctants++;
 
             thread th1 ([this, x_min, y_min, z_min, x_m, y_m, z_m, &child_0, &img, &file](){
                 build (x_min, y_min, z_min, x_m, y_m, z_m, child_0, img, file);
@@ -107,10 +106,10 @@ public:
         }
 
         if ((x_min <= x_m) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
-            Node child_1({x_min, y_min, z_m + 1}, {x_m, y_m, z_max});
-            child_1.write(file, nNodes);
-            root.children[1] = nNodes;
-            nNodes++;
+            Octant child_1({x_min, y_min, z_m + 1}, {x_m, y_m, z_max});
+            child_1.write(file, nOctants);
+            root.children[1] = nOctants;
+            nOctants++;
 
             thread th2 ([this, x_min, y_min, z_m_p, x_m, y_m, z_max, &child_1, &img, &file]() {
                 build (x_min, y_min, z_m_p, x_m, y_m, z_max, child_1, img, file);
@@ -119,10 +118,10 @@ public:
         }
 
         if (((x_m + 1) <= x_max) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
-            Node child_2({x_m + 1, y_min, z_m + 1}, {x_max, y_m, z_max});
-            child_2.write(file, nNodes);
-            root.children[2] = nNodes;
-            nNodes++;
+            Octant child_2({x_m + 1, y_min, z_m + 1}, {x_max, y_m, z_max});
+            child_2.write(file, nOctants);
+            root.children[2] = nOctants;
+            nOctants++;
             
             thread th3 ([this, x_m_p, y_min, z_m_p, x_max, y_m, z_max, &child_2, &img, &file]() {
                 build (x_m_p, y_min, z_m_p, x_max, y_m, z_max, child_2, img, file);
@@ -131,10 +130,10 @@ public:
         }
 
         if (((x_m + 1) <= x_max) && (y_min <= y_m) && (z_min <= z_m)) {
-            Node child_3({x_m + 1, y_min, z_min}, {x_max, y_m, z_m});
-            child_3.write(file, nNodes);
-            root.children[3] = nNodes;
-            nNodes++;
+            Octant child_3({x_m + 1, y_min, z_min}, {x_max, y_m, z_m});
+            child_3.write(file, nOctants);
+            root.children[3] = nOctants;
+            nOctants++;
 
             thread th4 ([this, x_m_p, y_min, z_min, x_max, y_m, z_m, &child_3, &img, &file]() {
                 build (x_m_p, y_min, z_min, x_max, y_m, z_m, child_3, img, file);
@@ -143,10 +142,10 @@ public:
         }
 
         if ((x_min <= x_m) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
-            Node child_4({x_min, y_m + 1, z_min}, {x_m, y_max, z_m});
-            child_4.write(file, nNodes);
-            root.children[4] = nNodes;
-            nNodes++;
+            Octant child_4({x_min, y_m + 1, z_min}, {x_m, y_max, z_m});
+            child_4.write(file, nOctants);
+            root.children[4] = nOctants;
+            nOctants++;
 
             thread th5 ([this, x_min, y_m_p, z_min, x_m, y_max, z_m, &child_4, &img, &file]() {
                 build (x_min, y_m_p, z_min, x_m, y_max, z_m, child_4, img, file);
@@ -155,10 +154,10 @@ public:
         }
 
         if ((x_min <= x_m) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
-            Node child_5({x_min, y_m + 1, z_m + 1}, {x_m, y_max, z_max});
-            child_5.write(file, nNodes);
-            root.children[5] = nNodes;
-            nNodes++;
+            Octant child_5({x_min, y_m + 1, z_m + 1}, {x_m, y_max, z_max});
+            child_5.write(file, nOctants);
+            root.children[5] = nOctants;
+            nOctants++;
 
             int tmp6 = y_m + 1;
             int tmp6_1 = z_m + 1;
@@ -169,10 +168,10 @@ public:
         }
 
         if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
-            Node child_6({x_m + 1, y_m + 1, z_m + 1}, {x_max, y_max, z_max});
-            child_6.write(file, nNodes);
-            root.children[6] = nNodes;
-            nNodes++;
+            Octant child_6({x_m + 1, y_m + 1, z_m + 1}, {x_max, y_max, z_max});
+            child_6.write(file, nOctants);
+            root.children[6] = nOctants;
+            nOctants++;
             
             int tmp7 = x_m + 1;
             int tmp7_1 = y_m + 1;
@@ -184,10 +183,10 @@ public:
         }
 
         if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
-            Node child_7({x_m + 1, y_m + 1, z_min}, {x_max, y_max, z_m});
-            child_7.write(file, nNodes);
-            root.children[7] = nNodes;
-            nNodes++;
+            Octant child_7({x_m + 1, y_m + 1, z_min}, {x_max, y_max, z_m});
+            child_7.write(file, nOctants);
+            root.children[7] = nOctants;
+            nOctants++;
 
             int tmp8 = x_m + 1;
             int tmp8_1 = y_m + 1;
@@ -201,7 +200,7 @@ public:
         root.write(file, root.id);
     }
 
-    void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Node &root, Cube &img, fstream &file) {
+    void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Octant &root, Cube &img, fstream &file) {
 		if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
             root.type = img[z_min][y_min][x_min] == 0 ? full : empty;
             root.write(file, root.id);
@@ -215,80 +214,80 @@ public:
 
         
         if ((x_min <= x_m) && (y_min <= y_m) && (z_min <= z_m)) {
-            Node child_0({x_min, y_min, z_min}, {x_m, y_m, z_m});
-            child_0.write(file, nNodes);
-            root.children[0] = nNodes;
-            nNodes++;
+            Octant child_0({x_min, y_min, z_min}, {x_m, y_m, z_m});
+            child_0.write(file, nOctants);
+            root.children[0] = nOctants;
+            nOctants++;
 
             build (x_min, y_min, z_min, x_m, y_m, z_m, child_0, img, file);
         }
 
         if ((x_min <= x_m) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
-            Node child_1({x_min, y_min, z_m + 1}, {x_m, y_m, z_max});
+            Octant child_1({x_min, y_min, z_m + 1}, {x_m, y_m, z_max});
             mtx.lock();
-            child_1.write(file, nNodes);
-            root.children[1] = nNodes;
-            nNodes++;
+            child_1.write(file, nOctants);
+            root.children[1] = nOctants;
+            nOctants++;
             mtx.unlock();
             build (x_min, y_min, z_m + 1, x_m, y_m, z_max, child_1, img, file);
         }
 
         if (((x_m + 1) <= x_max) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
-            Node child_2({x_m + 1, y_min, z_m + 1}, {x_max, y_m, z_max});
+            Octant child_2({x_m + 1, y_min, z_m + 1}, {x_max, y_m, z_max});
             mtx.lock();
-            child_2.write(file, nNodes);
-            root.children[2] = nNodes;
-            nNodes++;
+            child_2.write(file, nOctants);
+            root.children[2] = nOctants;
+            nOctants++;
             mtx.unlock();
             build (x_m + 1, y_min, z_m + 1, x_max, y_m, z_max, child_2, img, file);
         }
 
         if (((x_m + 1) <= x_max) && (y_min <= y_m) && (z_min <= z_m)) {
-            Node child_3({x_m + 1, y_min, z_min}, {x_max, y_m, z_m});
+            Octant child_3({x_m + 1, y_min, z_min}, {x_max, y_m, z_m});
             mtx.lock();
-            child_3.write(file, nNodes);
-            root.children[3] = nNodes;
-            nNodes++;
+            child_3.write(file, nOctants);
+            root.children[3] = nOctants;
+            nOctants++;
             mtx.unlock();
             build (x_m + 1, y_min, z_min, x_max, y_m, z_m, child_3, img, file);
         }
 
         if ((x_min <= x_m) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
-            Node child_4({x_min, y_m + 1, z_min}, {x_m, y_max, z_m});
+            Octant child_4({x_min, y_m + 1, z_min}, {x_m, y_max, z_m});
             mtx.lock();
-            child_4.write(file, nNodes);
-            root.children[4] = nNodes;
-            nNodes++;
+            child_4.write(file, nOctants);
+            root.children[4] = nOctants;
+            nOctants++;
             mtx.unlock();
             build (x_min, y_m + 1, z_min, x_m, y_max, z_m, child_4, img, file);
         }
 
         if ((x_min <= x_m) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
-            Node child_5({x_min, y_m + 1, z_m + 1}, {x_m, y_max, z_max});
+            Octant child_5({x_min, y_m + 1, z_m + 1}, {x_m, y_max, z_max});
             mtx.lock();
-            child_5.write(file, nNodes);
-            root.children[5] = nNodes;
-            nNodes++;
+            child_5.write(file, nOctants);
+            root.children[5] = nOctants;
+            nOctants++;
             mtx.unlock();
             build (x_min, y_m + 1, z_m + 1, x_m, y_max, z_max, child_5, img, file);
         }
 
         if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
-            Node child_6({x_m + 1, y_m + 1, z_m + 1}, {x_max, y_max, z_max});
+            Octant child_6({x_m + 1, y_m + 1, z_m + 1}, {x_max, y_max, z_max});
             mtx.lock();
-            child_6.write(file, nNodes);
-            root.children[6] = nNodes;
-            nNodes++;
+            child_6.write(file, nOctants);
+            root.children[6] = nOctants;
+            nOctants++;
             mtx.unlock();
             build (x_m + 1, y_m + 1, z_m + 1, x_max, y_max, z_max, child_6, img, file);
         }
 
         if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
-            Node child_7({x_m + 1, y_m + 1, z_min}, {x_max, y_max, z_m});
+            Octant child_7({x_m + 1, y_m + 1, z_min}, {x_max, y_max, z_m});
             mtx.lock();
-            child_7.write(file, nNodes);
-            root.children[7] = nNodes;
-            nNodes++;
+            child_7.write(file, nOctants);
+            root.children[7] = nOctants;
+            nOctants++;
             mtx.unlock();
             build (x_m + 1, y_m + 1, z_min, x_max, y_max, z_m, child_7, img, file);
         }
@@ -309,7 +308,7 @@ public:
         return true;
     }
 
-    bool intersect (Plane plano, Node root) {
+    bool intersect (Plane plano, Octant root) {
         float diagonal = sqrt(((root.p_end.x - root.p_start.x) << 1) + ((root.p_end.y - root.p_start.y) << 1) + ((root.p_end.z - root.p_start.z) << 1));
         float distance = plano.distance(root.p_end);
         
@@ -318,24 +317,24 @@ public:
         return false;
     }
 
-    static bool comparey(Punto a, Punto b) {return (a.y < b.y);}
-    static bool comparex(Punto a, Punto b) {return (a.x < b.x);}
+    static bool comparey(Point a, Point b) {return (a.y < b.y);}
+    static bool comparex(Point a, Point b) {return (a.x < b.x);}
 
 
-    vector<Node> make_cut(Punto p1, Punto p2, Punto p3, Punto p4) {
+    vector<Octant> make_cut(Point p1, Point p2, Point p3, Point p4) {
 
-        vector<Punto> points = {p1, p2, p3, p4};
+        vector<Point> points = {p1, p2, p3, p4};
         sort(points.begin(), points.end(), comparey);
         sort(points.begin(), points.begin() + 2 + 1, comparex);
         sort(points.begin() + 2, points.end(), comparex);
 
-        vector<Node> nodos;
+        vector<Octant> nodos;
         fstream file(filename.c_str(), ios::binary | ios::in);
-        Node root; root.read(file, 0);
+        Octant root; root.read(file, 0);
 
         Plane plane(points[0], points[1], points[2], points[3]);
 
-        Node curr;
+        Octant curr;
         for (int i = 0; i < 8; i++) {
             if (root.children[i] != -1) {
                 read_mtx.lock();
@@ -353,7 +352,7 @@ public:
         return nodos;
     }
 
-    void make_cut (Plane plane,  Node root, vector<Node> &nodos, fstream &file) {
+    void make_cut (Plane plane,  Octant root, vector<Octant> &nodos, fstream &file) {
         if (intersect(plane, root)) {
             if (root.type != middle) {
                 
@@ -361,7 +360,7 @@ public:
                 return;
             }
 
-            Node curr;
+            Octant curr;
             for (int i = 0; i < 8; i++) {
                 if (root.children[i] != -1) {
                     read_mtx.lock();
@@ -378,7 +377,7 @@ public:
 
     void rebuildByX (int x) {
         fstream file(filename.c_str(), ios::binary | ios::in);
-        Node root;
+        Octant root;
         root.read(file, 0);
         CImg<char> image (root.p_end.y + 1, root.p_end.z + 1);
         int x_m = (root.p_end.x + root.p_start.x)/2;
@@ -387,7 +386,7 @@ public:
         if (x <= x_m) c_ids = {0, 1, 5, 4};
         else c_ids = {3, 2, 6, 7};        
         for (size_t i = 0; i < 4; i++) {
-            Node temp;
+            Octant temp;
             temp.read(file, root.children[c_ids[i]]);   
             rebuildByX(x, temp, image, file);
         }
@@ -396,7 +395,7 @@ public:
 
     }
 
-    void rebuildByX (int x, Node root, CImg<char> &image, fstream &file) {
+    void rebuildByX (int x, Octant root, CImg<char> &image, fstream &file) {
         if (root.type != middle ) {
             if (root.p_start.x <= x && root.p_end.x >= x) {
                 for (int k = root.p_start.z; k <= root.p_end.z; k++) {
@@ -414,7 +413,7 @@ public:
             else c_ids = {3, 2, 6, 7};
             for (size_t i = 0; i < 4; i++) {
                 if (root.children[c_ids[i]] != -1) {
-                    Node temp;
+                    Octant temp;
                     temp.read(file, root.children[c_ids[i]]);
                     rebuildByX(x, temp, image, file);
                 }
@@ -425,7 +424,7 @@ public:
 
     void rebuildByY (int y) {
         fstream file(filename.c_str(), ios::binary | ios::in); 
-        Node root;
+        Octant root;
         root.read(file, 0);
         CImg<char> image (root.p_end.x + 1, root.p_end.z + 1);
         int y_m = (root.p_end.y + root.p_start.y)/2;
@@ -433,14 +432,14 @@ public:
         size_t i = (y <= y_m)? 0 : 4;
         size_t i_e = (y <= y_m)? 4 : 8;
         for (; i < i_e; i++) {
-            Node temp;
+            Octant temp;
             temp.read(file, root.children[i]);
             rebuildByY(y, temp, image, file);
         }
         image.display();
     }
 
-    void rebuildByY (int y, Node root, CImg<char> &image, fstream &file) {
+    void rebuildByY (int y, Octant root, CImg<char> &image, fstream &file) {
         if (root.type != middle ) {
             if (root.p_start.y <= y && root.p_end.y >= y) {
                 for (int k = root.p_start.z; k <= root.p_end.z; k++) {
@@ -457,7 +456,7 @@ public:
             size_t i_e = (y <= y_m)? 4 : 8;
             for (; i < i_e; i++) {
                 if (root.children[i] != -1) {
-                    Node temp;
+                    Octant temp;
                     temp.read(file, root.children[i]);
                     rebuildByY(y, temp, image, file);
                 }
@@ -468,7 +467,7 @@ public:
 
     void rebuildByZ (int z) {
         fstream file(filename.c_str(), ios::binary | ios::in); 
-        Node root;
+        Octant root;
         root.read(file, 0);
         CImg<char> image (root.p_end.x + 1, root.p_end.y + 1);
         int z_m = (root.p_end.z + root.p_start.z)/2;
@@ -477,14 +476,14 @@ public:
         if (z <= z_m) c_ids = {0, 4, 7, 3};
         else c_ids = {1, 5, 6, 2};
         for (size_t i = 0; i < 4; i++) {
-            Node temp;
+            Octant temp;
             temp.read(file, root.children[c_ids[i]]);
             rebuildByZ(z, temp, image, file);
         }
         image.display();
     }
 
-    void rebuildByZ (int z, Node root, CImg<char> &image, fstream &file) {
+    void rebuildByZ (int z, Octant root, CImg<char> &image, fstream &file) {
         if (root.type != middle ) {
             if (root.p_start.z <= z && root.p_end.z >= z) {
                 for (int j = root.p_start.y; j <= root.p_end.y; j++) {
@@ -502,7 +501,7 @@ public:
             else c_ids = {1, 5, 6, 2};
             for (size_t i = 0; i < 4; i++) {
                 if (root.children[c_ids[i]] != -1) {
-                    Node temp;
+                    Octant temp;
                     temp.read(file, root.children[c_ids[i]]);
                     rebuildByZ(z, temp, image, file);
                 }
@@ -514,7 +513,7 @@ public:
 
     void rebuildAll() {
         fstream file(filename.c_str(), ios::binary | ios::in); 
-        Node root;
+        Octant root;
         root.read(file, 0);
         int dim_z = root.p_end.z + 1;
         int dim_y = root.p_end.y + 1;
@@ -533,7 +532,7 @@ public:
 
             for (int i = 0; i < 8; i++) {
                 if (root.children[i] != -1) {
-                    Node child;
+                    Octant child;
                     child.read (file, root.children[i]);
 
                     thread th([this, child, &images, &file]() {
@@ -549,7 +548,7 @@ public:
 
     }
 
-    void rebuildAll(Node root, CImg<char> *images, fstream &file){
+    void rebuildAll(Octant root, CImg<char> *images, fstream &file){
         if (root.type == full || root.type == empty) {
             for (int z = root.p_start.z; z <= root.p_end.z; z++)
                 rebuild_img (root, z, images);
@@ -557,7 +556,7 @@ public:
         else {
             for (int i = 0; i < 8; i++) {
                 if (root.children[i] != -1) {
-                    Node child;
+                    Octant child;
                     child.read (file, root.children[i]);
                     rebuildAll (child, images, file);
                 }
@@ -565,16 +564,16 @@ public:
         }
     }
 
-    void rebuild_img (Node node, int z, CImg<char> *images) {
-        for (int y = node.p_start.y; y <= node.p_end.y; y++) {
-            for (int x = node.p_start.x; x <= node.p_end.x; x++) {
-                images[z] (y, x) = node.type;
+    void rebuild_img (Octant octant, int z, CImg<char> *images) {
+        for (int y = octant.p_start.y; y <= octant.p_end.y; y++) {
+            for (int x = octant.p_start.x; x <= octant.p_end.x; x++) {
+                images[z] (y, x) = octant.type;
             }
         }
     }
 
 
-    void pintar (vector<Node> nodes, Plane corte) {
+    void pintar (vector<Octant> octants, Plane corte) {
         /* Para cortes sobre eje y (y=0) */
         /* Obtener alto y ancho */
         int height = sqrt(pow(abs(corte.p1.z - corte.p4.z) + 1, 2) + pow(abs (corte.p4.x - corte.p1.x) + 1, 2));
@@ -582,13 +581,13 @@ public:
         CImg<u_char> img (width, height);
         /* Pintar el color de cada nodo en el plano */ 
 
-        size_t const quarter_size = nodes.size() / 4;
+        size_t const quarter_size = octants.size() / 4;
 
-        vector<Node>::iterator begin = nodes.begin();
-        vector<Node>::iterator split_1 = nodes.begin() + quarter_size;
-        vector<Node>::iterator split_2 = nodes.begin() + 2 * quarter_size;
-        vector<Node>::iterator split_3 = nodes.end() - quarter_size;
-        vector<Node>::iterator end = nodes.end();
+        vector<Octant>::iterator begin = octants.begin();
+        vector<Octant>::iterator split_1 = octants.begin() + quarter_size;
+        vector<Octant>::iterator split_2 = octants.begin() + 2 * quarter_size;
+        vector<Octant>::iterator split_3 = octants.end() - quarter_size;
+        vector<Octant>::iterator end = octants.end();
 
         //draw (begin, end, img);
         thread th1 ([this, begin, split_1, &img]() {
@@ -611,27 +610,27 @@ public:
         th3.join();
         th4.join();
 
-        //img.display();
-        img.save_bmp("hola.bmp");
+        img.display();
+        //img.save_bmp("hola.bmp");
     }
 
 
-    void draw (vector<Node>::iterator start, vector<Node>::iterator end, CImg<u_char> &img) {
-        for (vector<Node>::iterator node = start; node != end; node++) {
-            int w1 = node->p_start.y;
-            int w2 = node->p_end.y;
-            int h1 = node->p_start.x;
-            int h2 = node->p_end.x;
+    void draw (vector<Octant>::iterator start, vector<Octant>::iterator end, CImg<u_char> &img) {
+        for (vector<Octant>::iterator octant = start; octant != end; octant++) {
+            int w1 = octant->p_start.y;
+            int w2 = octant->p_end.y;
+            int h1 = octant->p_start.x;
+            int h2 = octant->p_end.x;
             
             for (int i = h1; i <= h2; i++) {
                 for (int j = w1; j <= w2; j++) {
-                    img(i, j) = (node->type == 0) ? 0 : 255;
+                    if(i < img.width() && j < img.height())
+                        img(i, j) = (octant->type == 0) ? 0 : 255;
                 }
             }
             
         }
     }
-
     ~OcTree(){}
 
 };

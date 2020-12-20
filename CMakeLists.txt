@@ -12,6 +12,8 @@ set(YOU_NEED_PNG 1)
 set(YOU_NEED_JPG 1)
 set(YOU_NEED_THREADS 1)
 
+SET(CMAKE_CXX_FLAGS "-fopenmp")
+
 
 if(${YOU_NEED_X11} EQUAL 1)
     message(STATUS "Looking for X11...")

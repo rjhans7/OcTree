@@ -361,3 +361,5 @@ files.sh
 testsqrt.cpp
 .idea/
 cmake-build-debug
+build
+*.bmp
