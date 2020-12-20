@@ -3,7 +3,7 @@ project(CImgProject)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(SOURCE_FILES main.cpp octree.h)
+set(SOURCE_FILES main.cpp octree.h structs.h)
 add_executable(CImgProject ${SOURCE_FILES})
 
 # You can alter these according to your needs, e.g if you don't need to display images - set(YOU_NEED_X11 0)

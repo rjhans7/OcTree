@@ -1,11 +1,9 @@
-#include <iostream>
 #include <fstream>
 #include <vector>
+
 #include "octree.h"
+#include "structs.h"
 
-
-// using namespace cimg_library;
-using namespace std;
 
 Cube build_cube (string filename, int dis, int umbral = 50) {
     ifstream fileIn(filename);
@@ -88,7 +86,6 @@ int main(int argc,char **argv) {
  	OcTree oct(cubo);
 	//visualizar(cubo, "cubo.txt");
 	//OcTree oct2 ("octree.bin");
-	//oct2.rebuildAll();
     // for (int i = 0; i < 8; i++) {
 	// 	oct2.rebuildByX(i);
 	// 	oct2.rebuildByY(i);
@@ -98,4 +95,4 @@ int main(int argc,char **argv) {
 	// oct2.rebuildByY(206);
 	// oct2.rebuildByZ(20);
 	oct.make_cut({0, 0, 0},{511, 0, 39},{511, 511, 39}, {511, 511, 0});
-}
+};
