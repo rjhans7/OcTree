@@ -325,8 +325,7 @@ public:
 
         Plane plane(p1, p2, p3, p4);
 
-        make_cut(plane, root, nodos, file);
-        /*Node curr;
+        Node curr;
         for (int i = 0; i < 8; i++) {
             if (root.children[i] != -1) {
                 read_mtx.lock();
@@ -339,7 +338,7 @@ public:
                 th.join();
             }
         }
-        */
+        
         pintar(nodos, plane);
         return nodos;
     }
@@ -571,7 +570,6 @@ public:
         int height = sqrt(pow(abs(corte.p1.z - corte.p4.z) + 1, 2) + pow(abs (corte.p4.x - corte.p1.x) + 1, 2));
         int width = abs(corte.p4.y - corte.p3.y) + 1;  //sqrt(pow(corte.p4.y - corte.p3.y, 2) + pow (corte.p4.x - corte.p3.x, 2));
         CImg<u_char> img (width, height);
-        img.display();
         /* Pintar el color de cada nodo en el plano */
         for (auto node : nodes) {
             int w1 = node.p_start.y;
@@ -579,14 +577,13 @@ public:
             int h1 = node.p_start.x;
             int h2 = node.p_end.x;
             
-            for (int j = h1; j <= h2; j++) {
-                for (int i = w1; i <= w2; i++) {
-                    img(i, j) = node.type;
+            for (int i = h1; i <= h2; i++) {
+                for (int j = w1; j <= w2; j++) {
+                    img(i, j) = (node.type == 0) ? 0 : 255;
                 }
             }
             
         }
-
         img.display();
     }
 

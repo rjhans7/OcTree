@@ -80,7 +80,7 @@ int main(int argc,char **argv) {
 
 	const char *file_i = cimg_option("-i", "paciente1_1.txt", "Input filename");
 	const int dis = cimg_option("-s", 0,"Display");
-	const int threshold = cimg_option("-t", 40,"Threshold");
+	const int threshold = cimg_option("-t", 100,"Threshold");
 
 	auto cubo = build_cube(file_i, dis, threshold);
  	OcTree oct(cubo);
