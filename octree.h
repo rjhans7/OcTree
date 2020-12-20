@@ -589,8 +589,8 @@ public:
         vector<Octant>::iterator split_3 = octants.end() - quarter_size;
         vector<Octant>::iterator end = octants.end();
 
-        //draw (begin, end, img);
-        thread th1 ([this, begin, split_1, &img]() {
+        draw (begin, end, img);
+        /*thread th1 ([this, begin, split_1, &img]() {
             draw (begin, split_1, img);
         });
         thread th2 ([this, split_1, split_2, &img]() {
@@ -609,7 +609,7 @@ public:
         th2.join();
         th3.join();
         th4.join();
-
+*/
         img.display();
         //img.save_bmp("hola.bmp");
     }
