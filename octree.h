@@ -1,5 +1,7 @@
 #pragma once
 
+#define THREADS 0
+
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -14,7 +16,8 @@ using namespace std;
 int ns = 0;
 
 mutex mtx; 
-mutex read_mtx; 
+mutex read_mtx;
+mutex push_mtx; 
 
 class OcTree {
 private:
@@ -57,7 +60,7 @@ public:
 
     OcTree (string filename) {
         this->filename = filename;
-        rebuildAll();
+        rebuild_all();
     }
 
     OcTree (Cube &img) {
@@ -70,7 +73,11 @@ public:
         root.write(file, nOctants);
         nOctants++;
 
-        first_build (0, 0, 0, size_x, size_y, size_z, root, img, file);
+        #ifdef THREADS == 0
+            build (0, 0, 0, size_x, size_y, size_z, root, img, file);
+        #else 
+            first_build (0, 0, 0, size_x, size_y, size_z, root, img, file);
+        #endif
             
         file.close();
     }
@@ -200,7 +207,7 @@ public:
         root.write(file, root.id);
     }
 
-    void build(int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Octant &root, Cube &img, fstream &file) {
+    void build (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Octant &root, Cube &img, fstream &file) {
 		if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
             root.type = img[z_min][y_min][x_min] == 0 ? full : empty;
             root.write(file, root.id);
@@ -321,7 +328,7 @@ public:
     static bool comparex(Point a, Point b) {return (a.x < b.x);}
 
 
-    vector<Octant> make_cut(Point p1, Point p2, Point p3, Point p4) {
+    vector<Octant> make_cut (Point p1, Point p2, Point p3, Point p4) {
 
         vector<Point> points = {p1, p2, p3, p4};
         sort(points.begin(), points.end(), comparey);
@@ -334,19 +341,69 @@ public:
 
         Plane plane(points[0], points[1], points[2], points[3]);
 
+        vector<thread> threads;
         Octant curr;
-        for (int i = 0; i < 8; i++) {
+
+        curr.read(file, root.children[0]);
+        thread th0 ([this, plane, curr, &nodos, &file]() {
+            make_cut(plane, curr, nodos, file);
+        });
+        curr.read(file, root.children[1]);
+        thread th1 ([this, plane, curr, &nodos, &file]() {
+            make_cut(plane, curr, nodos, file);
+        });
+        curr.read(file, root.children[2]);
+        thread th2 ([this, plane, curr, &nodos, &file]() {
+            make_cut(plane, curr, nodos, file);
+        });
+        curr.read(file, root.children[3]);
+        thread th3 ([this, plane, curr, &nodos, &file]() {
+            make_cut(plane, curr, nodos, file);
+        });
+        curr.read(file, root.children[4]);
+        thread th4 ([this, plane, curr, &nodos, &file]() {
+            make_cut(plane, curr, nodos, file);
+        });
+        curr.read(file, root.children[5]);
+        thread th5 ([this, plane, curr, &nodos, &file]() {
+            make_cut(plane, curr, nodos, file);
+        });
+        curr.read(file, root.children[6]);
+        thread th6 ([this, plane, curr, &nodos, &file]() {
+            make_cut(plane, curr, nodos, file);
+        });
+        curr.read(file, root.children[7]);
+        thread th7 ([this, plane, curr, &nodos, &file]() {
+            make_cut(plane, curr, nodos, file);
+        });
+
+        /*for (int i = 0; i < 8; i++) {
             if (root.children[i] != -1) {
                 read_mtx.lock();
                 curr.read(file, root.children[i]);
                 read_mtx.unlock();
-
+                
+                threads.push_back(thread ([this, plane, curr, &nodos, &file]() {
+                    make_cut(plane, curr, nodos, file);
+                }));
+                
                 thread th ([this, plane, curr, &nodos, &file]() {
                     make_cut(plane, curr, nodos, file);
                 });
                 th.join();
             }
-        }
+        }*/
+
+        th0.join();
+        th1.join();
+        th2.join();
+        th3.join();
+        th4.join();
+        th5.join();
+        th6.join();
+        th7.join();
+
+        //for (auto& th : threads) th.join();
         
         pintar(nodos, plane);
         return nodos;
@@ -356,7 +413,9 @@ public:
         if (intersect(plane, root)) {
             if (root.type != middle) {
                 
+                push_mtx.lock();
                 nodos.push_back(root);
+                push_mtx.unlock();
                 return;
             }
 
@@ -371,6 +430,7 @@ public:
                 }
             }
         }
+
         return;
     }
 
@@ -511,7 +571,7 @@ public:
     }
 
 
-    void rebuildAll() {
+    void rebuild_all () {
         fstream file(filename.c_str(), ios::binary | ios::in); 
         Octant root;
         root.read(file, 0);
@@ -523,32 +583,36 @@ public:
 
         for (int i = 0; i < dim_z; i++) images[i] = CImg<char> (dim_x, dim_y);
 
-        if (root.type == full || root.type == empty) {
-            for (int z = root.p_start.z; z <= root.p_end.z; z++) rebuild_img (root, z, images);
-        }
-
-        else {
-            vector<thread> threads;
-
-            for (int i = 0; i < 8; i++) {
-                if (root.children[i] != -1) {
-                    Octant child;
-                    child.read (file, root.children[i]);
-
-                    thread th([this, child, &images, &file]() {
-                        rebuildAll (child, images, file);
-                    });
-                    th.join();
-                }
+        #ifdef THREADS == 0
+            rebuild_all (root, images, file);
+        #else
+            if (root.type == full || root.type == empty) {
+                for (int z = root.p_start.z; z <= root.p_end.z; z++) rebuild_img (root, z, images);
             }
 
-        }
+            else {
+                vector<thread> threads;
+
+                for (int i = 0; i < 8; i++) {
+                    if (root.children[i] != -1) {
+                        Octant child;
+                        child.read (file, root.children[i]);
+
+                        thread th([this, child, &images, &file]() {
+                            rebuild_all (child, images, file);
+                        });
+                        th.join();
+                    }
+                }
+
+            }
+        #endif
 
         for (int i = 0; i < dim_z; i++) images[i].display();
 
     }
 
-    void rebuildAll(Octant root, CImg<char> *images, fstream &file){
+    void rebuild_all(Octant root, CImg<char> *images, fstream &file){
         if (root.type == full || root.type == empty) {
             for (int z = root.p_start.z; z <= root.p_end.z; z++)
                 rebuild_img (root, z, images);
@@ -558,7 +622,7 @@ public:
                 if (root.children[i] != -1) {
                     Octant child;
                     child.read (file, root.children[i]);
-                    rebuildAll (child, images, file);
+                    rebuild_all (child, images, file);
                 }
             }
         }
