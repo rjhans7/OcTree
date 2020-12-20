@@ -49,6 +49,7 @@ struct Plane {
         normal = v1 % v2;
         d = 0 - normal * p1;
     }
+
     bool checker(Point k) {
         int r = d + normal * k;
         return (r == 0);

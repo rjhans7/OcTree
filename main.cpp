@@ -76,6 +76,47 @@ Cube read_cube (string filename) {
 	return cubo;
 }
 
+static bool comparey(Point a, Point b) {return (a.y < b.y);}
+static bool comparex(Point a, Point b) {return (a.x < b.x);}
+
+void naive_cut (Cube cube, Point p1, Point p2, Point p3, Point p4) {
+	vector<Point> points = {p1, p2, p3, p4};
+
+	sort(points.begin(), points.end(), comparey);
+	sort(points.begin(), points.begin() + 2 + 1, comparex);
+	sort(points.begin() + 2, points.end(), comparex);
+
+	Plane plane(points[0], points[1], points[2], points[3]);
+
+	vector<Point> result;
+
+	int x_max = 0;
+	int y_max = 0;
+
+	for (int z = 0; z < 40; z++) {
+		for (int x = 0; x < 512; x++) {
+			for (int y = 0; y < 512; y++) {
+				Point p (x, y, z);
+				if (plane.checker(p)) {
+					result.push_back(p);
+					x_max = p.x > x_max ? p.x : x_max;
+					y_max = p.y > y_max ? p.y : y_max;
+				}
+			}
+		}
+	}
+
+	CImg<u_char> img (x_max + 1, y_max + 1);
+
+	for (auto point : result) {
+		 img(point.x, point.y) = cube[point.z][point.y][point.x] == 0 ? 0 : 255;
+	}
+
+
+
+	img.display();
+}
+
 int main(int argc,char **argv) {
 
 	const char *file_i = cimg_option("-i", "paciente1_1.txt", "Input filename");
@@ -97,6 +138,7 @@ int main(int argc,char **argv) {
 	//oct.make_cut({0, 0, 0},{511, 0, 0},{511, 511, 0}, {0, 511, 0});
 	//oct.make_cut({0, 0, 39},{0, 511, 39},{511, 0, 0}, {511, 511, 0});
 	oct.make_cut({0, 0, 0}, {0, 511, 0}, {511, 0, 39}, {511, 511, 39});
+	//naive_cut (cubo, {0, 0, 0}, {0, 511, 0}, {511, 0, 39}, {511, 511, 39});
 	//oct.make_cut({0, 0, 10},  {0, 500, 10}, {400, 0, 39}, {400, 500, 39});
 	//oct.make_cut({0, 511, 0}, {511, 0, 39}, {511, 511, 39}, {0, 0, 0});
 	//oct.make_cut({100, 250, 10},  {400, 250, 39}, {400, 0, 39}, {100, 0, 10});

@@ -1,6 +1,6 @@
 #pragma once
 
-#define THREADS 0
+#define THREADS
 
 #include <vector>
 #include <thread>
@@ -16,8 +16,6 @@ using namespace std;
 int ns = 0;
 
 mutex mtx; 
-mutex read_mtx;
-mutex push_mtx; 
 
 class OcTree {
 private:
@@ -73,10 +71,10 @@ public:
         root.write(file, nOctants);
         nOctants++;
 
-        #ifdef THREADS == 0
-            build (0, 0, 0, size_x, size_y, size_z, root, img, file);
-        #else 
+        #ifdef THREADS
             first_build (0, 0, 0, size_x, size_y, size_z, root, img, file);
+        #else 
+            build (0, 0, 0, size_x, size_y, size_z, root, img, file);
         #endif
             
         file.close();
@@ -328,9 +326,9 @@ public:
     static bool comparex(Point a, Point b) {return (a.x < b.x);}
 
 
-    vector<Octant> make_cut (Point p1, Point p2, Point p3, Point p4) {
-
+    void make_cut (Point p1, Point p2, Point p3, Point p4) {
         vector<Point> points = {p1, p2, p3, p4};
+
         sort(points.begin(), points.end(), comparey);
         sort(points.begin(), points.begin() + 2 + 1, comparex);
         sort(points.begin() + 2, points.end(), comparex);
@@ -341,92 +339,26 @@ public:
 
         Plane plane(points[0], points[1], points[2], points[3]);
 
-        vector<thread> threads;
-        Octant curr;
+        make_cut(plane, root, nodos, file);
 
-        curr.read(file, root.children[0]);
-        thread th0 ([this, plane, curr, &nodos, &file]() {
-            make_cut(plane, curr, nodos, file);
-        });
-        curr.read(file, root.children[1]);
-        thread th1 ([this, plane, curr, &nodos, &file]() {
-            make_cut(plane, curr, nodos, file);
-        });
-        curr.read(file, root.children[2]);
-        thread th2 ([this, plane, curr, &nodos, &file]() {
-            make_cut(plane, curr, nodos, file);
-        });
-        curr.read(file, root.children[3]);
-        thread th3 ([this, plane, curr, &nodos, &file]() {
-            make_cut(plane, curr, nodos, file);
-        });
-        curr.read(file, root.children[4]);
-        thread th4 ([this, plane, curr, &nodos, &file]() {
-            make_cut(plane, curr, nodos, file);
-        });
-        curr.read(file, root.children[5]);
-        thread th5 ([this, plane, curr, &nodos, &file]() {
-            make_cut(plane, curr, nodos, file);
-        });
-        curr.read(file, root.children[6]);
-        thread th6 ([this, plane, curr, &nodos, &file]() {
-            make_cut(plane, curr, nodos, file);
-        });
-        curr.read(file, root.children[7]);
-        thread th7 ([this, plane, curr, &nodos, &file]() {
-            make_cut(plane, curr, nodos, file);
-        });
-
-        /*for (int i = 0; i < 8; i++) {
-            if (root.children[i] != -1) {
-                read_mtx.lock();
-                curr.read(file, root.children[i]);
-                read_mtx.unlock();
-                
-                threads.push_back(thread ([this, plane, curr, &nodos, &file]() {
-                    make_cut(plane, curr, nodos, file);
-                }));
-                
-                thread th ([this, plane, curr, &nodos, &file]() {
-                    make_cut(plane, curr, nodos, file);
-                });
-                th.join();
-            }
-        }*/
-
-        th0.join();
-        th1.join();
-        th2.join();
-        th3.join();
-        th4.join();
-        th5.join();
-        th6.join();
-        th7.join();
-
-        //for (auto& th : threads) th.join();
-        
         pintar(nodos, plane);
-        return nodos;
     }
+
 
     void make_cut (Plane plane,  Octant root, vector<Octant> &nodos, fstream &file) {
         if (intersect(plane, root)) {
             if (root.type != middle) {
                 
-                push_mtx.lock();
                 nodos.push_back(root);
-                push_mtx.unlock();
                 return;
             }
 
             Octant curr;
             for (int i = 0; i < 8; i++) {
                 if (root.children[i] != -1) {
-                    read_mtx.lock();
                     curr.read(file, root.children[i]);
-                    read_mtx.unlock();
 
-                    make_cut(plane,curr, nodos, file);
+                    make_cut(plane, curr, nodos, file);
                 }
             }
         }
@@ -583,9 +515,7 @@ public:
 
         for (int i = 0; i < dim_z; i++) images[i] = CImg<char> (dim_x, dim_y);
 
-        #ifdef THREADS == 0
-            rebuild_all (root, images, file);
-        #else
+        /*#ifdef THREADS
             if (root.type == full || root.type == empty) {
                 for (int z = root.p_start.z; z <= root.p_end.z; z++) rebuild_img (root, z, images);
             }
@@ -606,7 +536,9 @@ public:
                 }
 
             }
-        #endif
+        #else*/
+            rebuild_all (root, images, file);
+        //#endif
 
         for (int i = 0; i < dim_z; i++) images[i].display();
 
@@ -640,20 +572,21 @@ public:
     void pintar (vector<Octant> octants, Plane corte) {
         /* Para cortes sobre eje y (y=0) */
         /* Obtener alto y ancho */
-        int height = sqrt(pow(abs(corte.p1.z - corte.p4.z) + 1, 2) + pow(abs (corte.p4.x - corte.p1.x) + 1, 2));
+        //int height = sqrt(pow(abs(corte.p1.z - corte.p3.z) + 1, 2) + pow(abs (corte.p3.x - corte.p1.x) + 1, 2));
+        int height = sqrt(pow(corte.p1.z - corte.p3.z, 2) + pow(corte.p3.x - corte.p1.x, 2));
         int width = abs(corte.p4.y - corte.p3.y) + 1;  //sqrt(pow(corte.p4.y - corte.p3.y, 2) + pow (corte.p4.x - corte.p3.x, 2));
         CImg<u_char> img (width, height);
         /* Pintar el color de cada nodo en el plano */ 
 
-        size_t const quarter_size = octants.size() / 4;
+        //size_t const quarter_size = octants.size() / 4;
 
         vector<Octant>::iterator begin = octants.begin();
-        vector<Octant>::iterator split_1 = octants.begin() + quarter_size;
-        vector<Octant>::iterator split_2 = octants.begin() + 2 * quarter_size;
-        vector<Octant>::iterator split_3 = octants.end() - quarter_size;
+        //vector<Octant>::iterator split_1 = octants.begin() + quarter_size;
+        //vector<Octant>::iterator split_2 = octants.begin() + 2 * quarter_size;
+        //vector<Octant>::iterator split_3 = octants.end() - quarter_size;
         vector<Octant>::iterator end = octants.end();
 
-        draw (begin, end, img);
+        draw (begin, end, img, corte);
         /*thread th1 ([this, begin, split_1, &img]() {
             draw (begin, split_1, img);
         });
@@ -679,13 +612,23 @@ public:
     }
 
 
-    void draw (vector<Octant>::iterator start, vector<Octant>::iterator end, CImg<u_char> &img) {
+    void draw (vector<Octant>::iterator start, vector<Octant>::iterator end, CImg<u_char> &img, Plane &plano) {
         for (vector<Octant>::iterator octant = start; octant != end; octant++) {
+            //Hallamos el punto de interseccion del plano con las rectas 
+            int t_w = -1*((plano.normal.x*octant->p_start.x) + (plano.normal.y*octant->p_start.y) + (plano.normal.z*octant->p_start.z) + plano.d)/(plano.normal.x*(octant->p_end.x - octant->p_start.x));
+            int t_h = -1*((plano.normal.x*octant->p_start.x) + (plano.normal.y*octant->p_start.y) + (plano.normal.z*octant->p_start.z) + plano.d)/(plano.normal.z*(octant->p_end.z - octant->p_start.z));
+
+            Point p_w (octant->p_start.x + t_w*(octant->p_end.x - octant->p_start.x), octant->p_start.y, octant->p_start.z);
+            Point p_h (octant->p_start.x, octant->p_start.y, octant->p_start.z + t_h*(octant->p_end.z - octant->p_start.z));
+            int d = sqrt(pow(p_w.x - p_h.x, 2) + pow(p_w.y - p_h.y, 2) + pow(p_w.z - p_h.z, 2));
+            int d_start = sqrt(pow(p_w.x - plano.p3.x, 2) + pow(p_w.y - plano.p3.y, 2) + pow(p_w.z - plano.p3.z, 2));
+
+
             int w1 = octant->p_start.y;
             int w2 = octant->p_end.y;
-            int h1 = octant->p_start.x;
-            int h2 = octant->p_end.x;
-            
+            int h1 = d_start;
+            int h2 = d_start + d;
+
             for (int i = h1; i <= h2; i++) {
                 for (int j = w1; j <= w2; j++) {
                     if(i < img.width() && j < img.height())
