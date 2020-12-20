@@ -1,10 +1,11 @@
 #pragma once
+#define cimg_use_openmp
 
 #include <vector>
 #include <thread>
 #include <mutex>
 #include <fstream>
-
+#include <algorithm>
 #include "CImg/CImg.h"
 #include "structs.h"
 
@@ -317,13 +318,22 @@ public:
         return false;
     }
 
+    static bool comparey(Punto a, Punto b) {return (a.y < b.y);}
+    static bool comparex(Punto a, Punto b) {return (a.x < b.x);}
 
-    vector<Node> make_cut(Punto p1, Punto p2, Punto p3, Punto p4){
+
+    vector<Node> make_cut(Punto p1, Punto p2, Punto p3, Punto p4) {
+
+        vector<Punto> points = {p1, p2, p3, p4};
+        sort(points.begin(), points.end(), comparey);
+        sort(points.begin(), points.begin() + 2 + 1, comparex);
+        sort(points.begin() + 2, points.end(), comparex);
+
         vector<Node> nodos;
         fstream file(filename.c_str(), ios::binary | ios::in);
         Node root; root.read(file, 0);
 
-        Plane plane(p1, p2, p3, p4);
+        Plane plane(points[0], points[1], points[2], points[3]);
 
         Node curr;
         for (int i = 0; i < 8; i++) {
@@ -570,21 +580,56 @@ public:
         int height = sqrt(pow(abs(corte.p1.z - corte.p4.z) + 1, 2) + pow(abs (corte.p4.x - corte.p1.x) + 1, 2));
         int width = abs(corte.p4.y - corte.p3.y) + 1;  //sqrt(pow(corte.p4.y - corte.p3.y, 2) + pow (corte.p4.x - corte.p3.x, 2));
         CImg<u_char> img (width, height);
-        /* Pintar el color de cada nodo en el plano */
-        for (auto node : nodes) {
-            int w1 = node.p_start.y;
-            int w2 = node.p_end.y;
-            int h1 = node.p_start.x;
-            int h2 = node.p_end.x;
+        /* Pintar el color de cada nodo en el plano */ 
+
+        size_t const quarter_size = nodes.size() / 4;
+
+        vector<Node>::iterator begin = nodes.begin();
+        vector<Node>::iterator split_1 = nodes.begin() + quarter_size;
+        vector<Node>::iterator split_2 = nodes.begin() + 2 * quarter_size;
+        vector<Node>::iterator split_3 = nodes.end() - quarter_size;
+        vector<Node>::iterator end = nodes.end();
+
+        //draw (begin, end, img);
+        thread th1 ([this, begin, split_1, &img]() {
+            draw (begin, split_1, img);
+        });
+        thread th2 ([this, split_1, split_2, &img]() {
+            draw (split_1, split_2, img);
+        });
+
+        thread th3 ([this, split_2, split_3, &img]() {
+            draw (split_2, split_3, img);
+        });
+
+        thread th4 ([this, split_3, end, &img]() {
+            draw (split_3, end, img);
+        });
+
+        th1.join();
+        th2.join();
+        th3.join();
+        th4.join();
+
+        //img.display();
+        img.save_bmp("hola.bmp");
+    }
+
+
+    void draw (vector<Node>::iterator start, vector<Node>::iterator end, CImg<u_char> &img) {
+        for (vector<Node>::iterator node = start; node != end; node++) {
+            int w1 = node->p_start.y;
+            int w2 = node->p_end.y;
+            int h1 = node->p_start.x;
+            int h2 = node->p_end.x;
             
             for (int i = h1; i <= h2; i++) {
                 for (int j = w1; j <= w2; j++) {
-                    img(i, j) = (node.type == 0) ? 0 : 255;
+                    img(i, j) = (node->type == 0) ? 0 : 255;
                 }
             }
             
         }
-        img.display();
     }
 
     ~OcTree(){}
