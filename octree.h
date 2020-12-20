@@ -14,6 +14,7 @@ using namespace std;
 int ns = 0;
 
 mutex mtx; 
+mutex read_mtx; 
 
 class OcTree {
 private:
@@ -324,8 +325,21 @@ public:
 
         Plane plane(p1, p2, p3, p4);
 
-        // TODO: pthreads 
-        make_cut(plane, root, nodos, file);
+        // make_cut(plane, root, nodos, file);
+        Node curr;
+        for (int i = 0; i < 8; i++) {
+            if (root.children[i] != -1) {
+                read_mtx.lock();
+                curr.read(file, root.children[i]);
+                read_mtx.unlock();
+
+                thread th ([this, plane, curr, &nodos, &file]() {
+                    make_cut(plane, curr, nodos, file);
+                });
+                th.join();
+            }
+        }
+
         pintar(nodos, plane);
         return nodos;
     }
@@ -341,7 +355,10 @@ public:
             Node curr;
             for (int i = 0; i < 8; i++) {
                 if (root.children[i] != -1) {
+                    read_mtx.lock();
                     curr.read(file, root.children[i]);
+                    read_mtx.unlock();
+
                     make_cut(plane,curr, nodos, file);
                 }
             }
@@ -498,23 +515,25 @@ public:
 
         for (int i = 0; i < dim_z; i++) images[i] = CImg<char> (dim_x, dim_y);
 
-        //rebuildAll (root, images, file);
         if (root.type == full || root.type == empty) {
-            for (int z = root.p_start.z; z <= root.p_end.z; z++)
-                rebuild_img (root, z, images);
+            for (int z = root.p_start.z; z <= root.p_end.z; z++) rebuild_img (root, z, images);
         }
+
         else {
+            vector<thread> threads;
+
             for (int i = 0; i < 8; i++) {
                 if (root.children[i] != -1) {
                     Node child;
                     child.read (file, root.children[i]);
 
-                    thread th ([this, child, &images, &file]() {
+                    thread th([this, child, &images, &file]() {
                         rebuildAll (child, images, file);
                     });
                     th.join();
                 }
             }
+
         }
 
         for (int i = 0; i < dim_z; i++) images[i].display();
@@ -545,8 +564,6 @@ public:
         }
     }
 
-
-    
 
     void pintar (vector<Node> nodes, Plane corte) {
         /* Para cortes sobre eje y (y=0) */
