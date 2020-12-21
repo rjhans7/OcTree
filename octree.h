@@ -675,9 +675,9 @@ public:
 
             */
 
-	        for (int z = octant.p_start.z; z <= octant.p_end.z; ++z) {
-				for (int y = octant.p_start.y; y <= octant.p_end.y; ++y) {
-					for (int x = octant.p_start.x; x <= octant.p_end.x; ++x) {
+	        for (int z = octant->p_start.z; z <= octant->p_end.z; ++z) {
+				for (int y = octant->p_start.y; y <= octant->p_end.y; ++y) {
+					for (int x = octant->p_start.x; x <= octant->p_end.x; ++x) {
 						if (plane.distance({x, y, z}) < 5) {
 							int pitagoraso = sqrt (pow (abs (plano.p3.x - x), 2) + pow (abs (plano.p3.z - z) , 2));
 							img(pitagoraso, y) = octant->type == 0 ? 0 : 255;
