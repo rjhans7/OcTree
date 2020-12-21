@@ -137,13 +137,12 @@ int main(int argc,char **argv) {
 	// oct2.rebuildByZ(20);
 	//oct.make_cut({0, 0, 0},{511, 0, 0},{511, 511, 0}, {0, 511, 0});
 	//oct.make_cut({0, 0, 39},{0, 511, 39},{511, 0, 0}, {511, 511, 0});
-	oct.start_measures ();
-	//oct.make_cut({0, 255, 0}, {0, 255, 39}, {51, 255, 0}, {511, 255, 39});
-	oct.rebuildByY (150);
+	//oct.start_measures ();
+	oct.make_cut({0, 0, 0}, {0, 511, 39}, {511, 0, 0}, {511, 511, 39});
 	//auto oct_result = oct.end_measures ();
 	//clock_t start, end;
 	//start = clock ();
-	//naive_cut (cubo, {0, 255, 0}, {0, 255, 39}, {51, 255, 0}, {511, 255, 39});
+	//naive_cut (cubo, {0, 0, 9}, {0, 511, 29}, {511, 0, 9}, {511, 511, 29});
 	//end = clock ();
 	//double time_taken = (double) (end - start) / CLOCKS_PER_SEC;
 	//cout << "tiempo de ejecucion en oct: " << oct_result.first << " tiempo de ejecucion en bf: " << time_taken << endl;

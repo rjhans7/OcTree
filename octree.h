@@ -464,7 +464,7 @@ public:
             temp.read(file, root.children[i]);
             rebuildByY(y, temp, image, file);
         }
-        image.display();
+        //image.display();
     }
 
     void rebuildByY (int y, Octant root, CImg<char> &image, fstream &file) {
@@ -644,8 +644,8 @@ public:
         th3.join();
         th4.join();
 */
-        //img.display();
-        //img.save_bmp("hola.bmp");
+        img.display();
+        //img.save_png("oct_corte_1.png");
     }
 
 
