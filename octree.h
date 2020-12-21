@@ -644,7 +644,7 @@ public:
         th3.join();
         th4.join();
 */
-        img.display();
+        //img.display();
         //img.save_bmp("hola.bmp");
     }
 
@@ -673,6 +673,10 @@ public:
                         img(i, j) = (octant->type == 0) ? 0 : 255;
                 }
             }
+
+            /*
+                rrvr
+            */
             
         }
     }
