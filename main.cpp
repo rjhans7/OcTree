@@ -138,9 +138,8 @@ int main(int argc,char **argv) {
 	//oct.make_cut({0, 0, 0},{511, 0, 0},{511, 511, 0}, {0, 511, 0});
 	//oct.make_cut({0, 0, 39},{0, 511, 39},{511, 0, 0}, {511, 511, 0});
 	oct.start_measures ();
-	//oct.make_cut({0, 255, 0}, {0, 255, 39}, {51, 255, 0}, {511, 255, 39});
-	oct.rebuildByY (150);
-	//auto oct_result = oct.end_measures ();
+	oct.make_cut({0, 0, 0}, {0, 511, 0}, {511, 0, 39}, {511, 511, 39});
+	auto oct_result = oct.end_measures ();
 	//clock_t start, end;
 	//start = clock ();
 	//naive_cut (cubo, {0, 255, 0}, {0, 255, 39}, {51, 255, 0}, {511, 255, 39});

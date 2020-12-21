@@ -644,8 +644,8 @@ public:
         th3.join();
         th4.join();
 */
-        //img.display();
-        //img.save_bmp("hola.bmp");
+        img.display();
+        img.save_jpeg("resultados_cortes/corte_5.jpg");
     }
 
 
