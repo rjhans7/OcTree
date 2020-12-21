@@ -4,7 +4,6 @@
 #include "octree.h"
 #include "structs.h"
 
-
 Cube build_cube (string filename, int dis, int umbral = 50) {
     ifstream fileIn(filename);
 	u_short dim_x, dim_y, dim_z;
@@ -79,6 +78,8 @@ Cube read_cube (string filename) {
 static bool comparey(Point a, Point b) {return (a.y < b.y);}
 static bool comparex(Point a, Point b) {return (a.x < b.x);}
 
+int ram = 0;
+
 void naive_cut (Cube cube, Point p1, Point p2, Point p3, Point p4) {
 	vector<Point> points = {p1, p2, p3, p4};
 
@@ -87,32 +88,31 @@ void naive_cut (Cube cube, Point p1, Point p2, Point p3, Point p4) {
 	sort(points.begin() + 2, points.end(), comparex);
 
 	Plane plane(points[0], points[1], points[2], points[3]);
-
 	vector<Point> result;
 
-	int x_max = 0;
 	int y_max = 0;
+	int y_min = 0;
 
 	for (int z = 0; z < 40; z++) {
-		for (int x = 0; x < 512; x++) {
-			for (int y = 0; y < 512; y++) {
+		for (int y = 0; y < 512; y++) {
+			for (int x = 0; x < 512; x++) {
 				Point p (x, y, z);
-				if (plane.checker(p)) {
+				if (plane.distance(p) < 5) {
 					result.push_back(p);
-					x_max = p.x > x_max ? p.x : x_max;
 					y_max = p.y > y_max ? p.y : y_max;
+					y_min = p.y < y_min ? p.y : y_min;
 				}
 			}
 		}
 	}
 
-	CImg<u_char> img (x_max + 1, y_max + 1);
+	ram += cube.size () * cube[0].size () * cube[0][0].size () + result.size (); 
+	CImg<u_char> img (sqrt(pow(points[0].z - points[2].z, 2) + pow(points[0].x - points[2].x, 2)) + 1, y_max - y_min + 1);
 
 	for (auto point : result) {
-		 img(point.x, point.y) = cube[point.z][point.y][point.x] == 0 ? 0 : 255;
+		int pitagoraso = sqrt (pow (abs (points[2].x - point.x), 2) + pow (abs (points[2].z - point.z) , 2));
+		img(pitagoraso, point.y) = cube[point.z][point.y][point.x] == 0 ? 0 : 255;
 	}
-
-
 
 	img.display();
 }
@@ -124,7 +124,7 @@ int main(int argc,char **argv) {
 	const int threshold = cimg_option("-t", 100,"Threshold");
 
 	auto cubo = build_cube(file_i, dis, threshold);
- 	OcTree oct(cubo);
+ 	//OcTree oct(cubo);
 	//visualizar(cubo, "cubo.txt");
 	//OcTree oct2 ("octree.bin");
     // for (int i = 0; i < 8; i++) {
@@ -137,8 +137,16 @@ int main(int argc,char **argv) {
 	// oct2.rebuildByZ(20);
 	//oct.make_cut({0, 0, 0},{511, 0, 0},{511, 511, 0}, {0, 511, 0});
 	//oct.make_cut({0, 0, 39},{0, 511, 39},{511, 0, 0}, {511, 511, 0});
-	oct.make_cut({0, 0, 0}, {0, 511, 0}, {511, 0, 39}, {511, 511, 39});
-	//naive_cut (cubo, {0, 0, 0}, {0, 511, 0}, {511, 0, 39}, {511, 511, 39});
+	//oct.start_measures ();
+	//oct.make_cut({0, 0, 0}, {0, 511, 0}, {511, 0, 39}, {511, 511, 39});
+	//auto oct_result = oct.end_measures ();
+	//clock_t start, end;
+	//start = clock ();
+	naive_cut (cubo, {0, 0, 0}, {0, 511, 0}, {511, 0, 39}, {511, 511, 39});
+	//end = clock ();
+	//double time_taken = (double) (end - start) / CLOCKS_PER_SEC;
+	//cout << "tiempo de ejecucion en oct: " << oct_result.first << " tiempo de ejecucion en bf: " << time_taken << endl;
+	//cout << "ram utilizada en oct: " << oct_result.second << " ram utilizada en bf: " << ram << endl;
 	//oct.make_cut({0, 0, 10},  {0, 500, 10}, {400, 0, 39}, {400, 500, 39});
 	//oct.make_cut({0, 511, 0}, {511, 0, 39}, {511, 511, 39}, {0, 0, 0});
 	//oct.make_cut({100, 250, 10},  {400, 250, 39}, {400, 0, 39}, {100, 0, 10});

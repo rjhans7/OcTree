@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <vector>
-
+#define PI 3.14159265
 using namespace std;
 
 typedef unsigned char u_char;
@@ -55,7 +55,12 @@ struct Plane {
         return (r == 0);
     }
 
-    int distance (Point k) {
-        return (d + normal * k) / sqrt((normal.x << 1) + (normal.y << 1) + (normal.z << 1));
+    float distance (Point k) {
+        return abs((d + normal * k) / sqrt(pow(normal.x, 2) + pow(normal.y, 2) + pow(normal.z, 2)));
+    }
+
+    double insersect(Plane plane_b) {
+        double alpha = abs(this->normal*plane_b.normal) / (sqrt(pow(this->normal.x, 2) + pow(this->normal.y, 2) + pow(this->normal.z, 2)) * sqrt(pow(plane_b.normal.x, 2) + pow(plane_b.normal.y, 2) + pow(plane_b.normal.z, 2)));
+        return acos (alpha) * 180.0 / PI;
     }
 };

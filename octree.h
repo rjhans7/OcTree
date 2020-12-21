@@ -54,6 +54,10 @@ private:
     long nOctants = 0;
     string filename;
 
+    clock_t t_start, t_end;
+    double time_taken;
+    long ram;
+
 public:
 
     OcTree (string filename) {
@@ -67,8 +71,10 @@ public:
         int size_x = img[0][0].size() - 1;
         int size_y = img[0].size() - 1;
         int size_z = img.size() - 1;
+        ram += sizeof(int) * 3 + sizeof(nOctants) + sizeof(filename);
         Octant root ({0, 0, 0}, {size_x, size_y, size_z});
         root.write(file, nOctants);
+        ram += sizeof(root);
         nOctants++;
 
         #ifdef THREADS
@@ -79,6 +85,18 @@ public:
             
         file.close();
     }
+
+    void start_measures() {
+        t_start = clock();
+        this->ram = 0;
+    }
+
+    std::pair<double,long> end_measures() {
+        t_end = clock();
+        time_taken = double(t_end - t_start)/CLOCKS_PER_SEC; 
+        return {time_taken, this->ram};
+    }
+
 
     // Deploys 8 threads;
     void first_build (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Octant &root, Cube &img, fstream &file) {
@@ -96,9 +114,12 @@ public:
         int y_m_p = y_m + 1;
         int z_m_p = z_m + 1;
 
+        ram += sizeof(int) * 6;
+
         
         if ((x_min <= x_m) && (y_min <= y_m) && (z_min <= z_m)) {
             Octant child_0({x_min, y_min, z_min}, {x_m, y_m, z_m});
+            ram += sizeof(Octant);
             child_0.write(file, nOctants);
             root.children[0] = nOctants;
             nOctants++;
@@ -112,6 +133,7 @@ public:
 
         if ((x_min <= x_m) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
             Octant child_1({x_min, y_min, z_m + 1}, {x_m, y_m, z_max});
+            ram += sizeof(Octant);
             child_1.write(file, nOctants);
             root.children[1] = nOctants;
             nOctants++;
@@ -124,6 +146,7 @@ public:
 
         if (((x_m + 1) <= x_max) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
             Octant child_2({x_m + 1, y_min, z_m + 1}, {x_max, y_m, z_max});
+            ram += sizeof(Octant);
             child_2.write(file, nOctants);
             root.children[2] = nOctants;
             nOctants++;
@@ -136,6 +159,7 @@ public:
 
         if (((x_m + 1) <= x_max) && (y_min <= y_m) && (z_min <= z_m)) {
             Octant child_3({x_m + 1, y_min, z_min}, {x_max, y_m, z_m});
+            ram += sizeof(Octant);
             child_3.write(file, nOctants);
             root.children[3] = nOctants;
             nOctants++;
@@ -148,6 +172,7 @@ public:
 
         if ((x_min <= x_m) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
             Octant child_4({x_min, y_m + 1, z_min}, {x_m, y_max, z_m});
+            ram += sizeof(Octant);
             child_4.write(file, nOctants);
             root.children[4] = nOctants;
             nOctants++;
@@ -160,44 +185,39 @@ public:
 
         if ((x_min <= x_m) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
             Octant child_5({x_min, y_m + 1, z_m + 1}, {x_m, y_max, z_max});
+            ram += sizeof(Octant);
             child_5.write(file, nOctants);
             root.children[5] = nOctants;
             nOctants++;
 
-            int tmp6 = y_m + 1;
-            int tmp6_1 = z_m + 1;
-            thread th6 ([this, x_min, tmp6, tmp6_1, x_m, y_max, z_max, &child_5, &img, &file]() {
-                build (x_min, tmp6, tmp6_1, x_m, y_max, z_max, child_5, img, file);
+            thread th6 ([this, x_min, y_m_p, z_m_p, x_m, y_max, z_max, &child_5, &img, &file]() {
+                build (x_min, y_m_p, z_m_p, x_m, y_max, z_max, child_5, img, file);
             });
             th6.join();
         }
 
         if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
             Octant child_6({x_m + 1, y_m + 1, z_m + 1}, {x_max, y_max, z_max});
+            ram += sizeof(Octant);
             child_6.write(file, nOctants);
             root.children[6] = nOctants;
             nOctants++;
             
-            int tmp7 = x_m + 1;
-            int tmp7_1 = y_m + 1;
-            int tmp7_2 = z_m + 1;
-            thread th7 ([this, tmp7, tmp7_1, tmp7_2, x_max, y_max, z_max, &child_6, &img, &file]() {
-                build (tmp7, tmp7_1, tmp7_2, x_max, y_max, z_max, child_6, img, file);
+            thread th7 ([this, x_m_p, y_m_p, z_m_p, x_max, y_max, z_max, &child_6, &img, &file]() {
+                build (x_m_p, y_m_p, z_m_p, x_max, y_max, z_max, child_6, img, file);
             });
             th7.join();
         }
 
         if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
             Octant child_7({x_m + 1, y_m + 1, z_min}, {x_max, y_max, z_m});
+            ram += sizeof(Octant);
             child_7.write(file, nOctants);
             root.children[7] = nOctants;
             nOctants++;
 
-            int tmp8 = x_m + 1;
-            int tmp8_1 = y_m + 1;
-
-            thread th8 ([this, tmp8, tmp8_1, z_min, x_max, y_max, z_m, &child_7, &img, &file]() {
-                build (tmp8, tmp8_1, z_min, x_max, y_max, z_m, child_7, img, file);
+            thread th8 ([this, x_m_p, y_m_p, z_min, x_max, y_max, z_m, &child_7, &img, &file]() {
+                build (x_m_p, y_m_p, z_min, x_max, y_max, z_m, child_7, img, file);
             });
             th8.join();
         }
@@ -217,9 +237,12 @@ public:
         int y_m = (y_max + y_min) / 2;
         int z_m = (z_max + z_min) / 2;
 
+        ram += sizeof(int) * 3;
+
         
         if ((x_min <= x_m) && (y_min <= y_m) && (z_min <= z_m)) {
             Octant child_0({x_min, y_min, z_min}, {x_m, y_m, z_m});
+            ram += sizeof(Octant);
             child_0.write(file, nOctants);
             root.children[0] = nOctants;
             nOctants++;
@@ -229,6 +252,7 @@ public:
 
         if ((x_min <= x_m) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
             Octant child_1({x_min, y_min, z_m + 1}, {x_m, y_m, z_max});
+            ram += sizeof(Octant);
             mtx.lock();
             child_1.write(file, nOctants);
             root.children[1] = nOctants;
@@ -239,6 +263,7 @@ public:
 
         if (((x_m + 1) <= x_max) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
             Octant child_2({x_m + 1, y_min, z_m + 1}, {x_max, y_m, z_max});
+            ram += sizeof(Octant);
             mtx.lock();
             child_2.write(file, nOctants);
             root.children[2] = nOctants;
@@ -249,6 +274,7 @@ public:
 
         if (((x_m + 1) <= x_max) && (y_min <= y_m) && (z_min <= z_m)) {
             Octant child_3({x_m + 1, y_min, z_min}, {x_max, y_m, z_m});
+            ram += sizeof(Octant);
             mtx.lock();
             child_3.write(file, nOctants);
             root.children[3] = nOctants;
@@ -259,6 +285,7 @@ public:
 
         if ((x_min <= x_m) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
             Octant child_4({x_min, y_m + 1, z_min}, {x_m, y_max, z_m});
+            ram += sizeof(Octant);
             mtx.lock();
             child_4.write(file, nOctants);
             root.children[4] = nOctants;
@@ -269,6 +296,7 @@ public:
 
         if ((x_min <= x_m) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
             Octant child_5({x_min, y_m + 1, z_m + 1}, {x_m, y_max, z_max});
+            ram += sizeof(Octant);
             mtx.lock();
             child_5.write(file, nOctants);
             root.children[5] = nOctants;
@@ -279,6 +307,7 @@ public:
 
         if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
             Octant child_6({x_m + 1, y_m + 1, z_m + 1}, {x_max, y_max, z_max});
+            ram += sizeof(Octant);
             mtx.lock();
             child_6.write(file, nOctants);
             root.children[6] = nOctants;
@@ -289,6 +318,7 @@ public:
 
         if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
             Octant child_7({x_m + 1, y_m + 1, z_min}, {x_max, y_max, z_m});
+            ram += sizeof(Octant);
             mtx.lock();
             child_7.write(file, nOctants);
             root.children[7] = nOctants;
@@ -302,6 +332,7 @@ public:
 
     bool check (int &x_min, int &y_min, int &z_min, int &x_max, int &y_max, int &z_max, Cube &img) {
         bool c = img[z_min][y_min][x_min];
+        ram += sizeof(bool);
 
         for (int z = z_min; z <= z_max; ++z) {
             for (int y = y_min; y <= y_max; ++y) {
@@ -316,6 +347,8 @@ public:
     bool intersect (Plane plano, Octant root) {
         float diagonal = sqrt(((root.p_end.x - root.p_start.x) << 1) + ((root.p_end.y - root.p_start.y) << 1) + ((root.p_end.z - root.p_start.z) << 1));
         float distance = plano.distance(root.p_end);
+
+        ram += sizeof(float) * 2;
         
         if (distance <= diagonal) return true;
 
@@ -328,20 +361,22 @@ public:
 
     void make_cut (Point p1, Point p2, Point p3, Point p4) {
         vector<Point> points = {p1, p2, p3, p4};
+        ram += points.size() * sizeof(Point);
 
         sort(points.begin(), points.end(), comparey);
         sort(points.begin(), points.begin() + 2 + 1, comparex);
         sort(points.begin() + 2, points.end(), comparex);
 
-        vector<Octant> nodos;
+        vector<Octant> octants;
         fstream file(filename.c_str(), ios::binary | ios::in);
         Octant root; root.read(file, 0);
 
         Plane plane(points[0], points[1], points[2], points[3]);
 
-        make_cut(plane, root, nodos, file);
+        make_cut(plane, root, octants, file);
 
-        pintar(nodos, plane);
+        ram += octants.size() * sizeof(Octant) + sizeof(Octant) + sizeof(Plane);
+        pintar(octants, plane);
     }
 
 
@@ -354,6 +389,7 @@ public:
             }
 
             Octant curr;
+            ram += sizeof(Octant);
             for (int i = 0; i < 8; i++) {
                 if (root.children[i] != -1) {
                     curr.read(file, root.children[i]);
@@ -576,6 +612,7 @@ public:
         int height = sqrt(pow(corte.p1.z - corte.p3.z, 2) + pow(corte.p3.x - corte.p1.x, 2));
         int width = abs(corte.p4.y - corte.p3.y) + 1;  //sqrt(pow(corte.p4.y - corte.p3.y, 2) + pow (corte.p4.x - corte.p3.x, 2));
         CImg<u_char> img (width, height);
+        ram += sizeof(int) * 2 + sizeof(CImg<u_char>);
         /* Pintar el color de cada nodo en el plano */ 
 
         //size_t const quarter_size = octants.size() / 4;
@@ -615,19 +652,20 @@ public:
     void draw (vector<Octant>::iterator start, vector<Octant>::iterator end, CImg<u_char> &img, Plane &plano) {
         for (vector<Octant>::iterator octant = start; octant != end; octant++) {
             //Hallamos el punto de interseccion del plano con las rectas 
-            int t_w = -1*((plano.normal.x*octant->p_start.x) + (plano.normal.y*octant->p_start.y) + (plano.normal.z*octant->p_start.z) + plano.d)/(plano.normal.x*(octant->p_end.x - octant->p_start.x));
+            /*int t_w = -1*((plano.normal.x*octant->p_start.x) + (plano.normal.y*octant->p_start.y) + (plano.normal.z*octant->p_start.z) + plano.d)/(plano.normal.x*(octant->p_end.x - octant->p_start.x));
             int t_h = -1*((plano.normal.x*octant->p_start.x) + (plano.normal.y*octant->p_start.y) + (plano.normal.z*octant->p_start.z) + plano.d)/(plano.normal.z*(octant->p_end.z - octant->p_start.z));
 
             Point p_w (octant->p_start.x + t_w*(octant->p_end.x - octant->p_start.x), octant->p_start.y, octant->p_start.z);
             Point p_h (octant->p_start.x, octant->p_start.y, octant->p_start.z + t_h*(octant->p_end.z - octant->p_start.z));
             int d = sqrt(pow(p_w.x - p_h.x, 2) + pow(p_w.y - p_h.y, 2) + pow(p_w.z - p_h.z, 2));
             int d_start = sqrt(pow(p_w.x - plano.p3.x, 2) + pow(p_w.y - plano.p3.y, 2) + pow(p_w.z - plano.p3.z, 2));
-
+            */
 
             int w1 = octant->p_start.y;
             int w2 = octant->p_end.y;
-            int h1 = d_start;
-            int h2 = d_start + d;
+            int h1 = octant->p_start.x;
+            int h2 = octant->p_end.x;
+            
 
             for (int i = h1; i <= h2; i++) {
                 for (int j = w1; j <= w2; j++) {
