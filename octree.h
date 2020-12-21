@@ -645,7 +645,7 @@ public:
         th4.join();
 */
         img.display();
-        //img.save_bmp("hola.bmp");
+        img.save_bmp("resultados_cortes/corte_5.jpg");
     }
 
 
@@ -673,6 +673,10 @@ public:
                         img(i, j) = (octant->type == 0) ? 0 : 255;
                 }
             }
+
+            /*
+                rrvr
+            */
             
         }
     }

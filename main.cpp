@@ -124,7 +124,7 @@ int main(int argc,char **argv) {
 	const int threshold = cimg_option("-t", 100,"Threshold");
 
 	auto cubo = build_cube(file_i, dis, threshold);
- 	//OcTree oct(cubo);
+ 	OcTree oct(cubo);
 	//visualizar(cubo, "cubo.txt");
 	//OcTree oct2 ("octree.bin");
     // for (int i = 0; i < 8; i++) {
@@ -137,14 +137,19 @@ int main(int argc,char **argv) {
 	// oct2.rebuildByZ(20);
 	//oct.make_cut({0, 0, 0},{511, 0, 0},{511, 511, 0}, {0, 511, 0});
 	//oct.make_cut({0, 0, 39},{0, 511, 39},{511, 0, 0}, {511, 511, 0});
-	//oct.start_measures ();
-	//oct.make_cut({0, 0, 0}, {0, 511, 0}, {511, 0, 39}, {511, 511, 39});
-	//auto oct_result = oct.end_measures ();
+	oct.start_measures ();
+	oct.make_cut({0, 0, 0}, {0, 511, 0}, {511, 0, 39}, {511, 511, 39});
+	auto oct_result = oct.end_measures ();
 	//clock_t start, end;
 	//start = clock ();
-	naive_cut (cubo, {0, 0, 0}, {0, 511, 0}, {511, 0, 39}, {511, 511, 39});
+	//naive_cut (cubo, {0, 255, 0}, {0, 255, 39}, {51, 255, 0}, {511, 255, 39});
 	//end = clock ();
 	//double time_taken = (double) (end - start) / CLOCKS_PER_SEC;
+	//cout << "tiempo de ejecucion en oct: " << oct_result.first << " tiempo de ejecucion en bf: " << time_taken << endl;
+	//cout << "ram utilizada en oct: " << oct_result.second << " ram utilizada en bf: " << ram << endl;
+	//oct.make_cut({0, 0, 10},  {0, 500, 10}, {400, 0, 39}, {400, 500, 39});
+	//oct.make_cut({0, 511, 0}, {511, 0, 39}, {511, 511, 39}, {0, 0, 0});
+	//oct.make_cut({100, 250, 10},  {400, 250, 39}, {400, 0, 39}, {100, 0, 10});
 	//cout << "tiempo de ejecucion en oct: " << oct_result.first << " tiempo de ejecucion en bf: " << time_taken << endl;
 	//cout << "ram utilizada en oct: " << oct_result.second << " ram utilizada en bf: " << ram << endl;
 	//oct.make_cut({0, 0, 10},  {0, 500, 10}, {400, 0, 39}, {400, 500, 39});
