@@ -659,7 +659,6 @@ public:
             Point p_h (octant->p_start.x, octant->p_start.y, octant->p_start.z + t_h*(octant->p_end.z - octant->p_start.z));
             int d = sqrt(pow(p_w.x - p_h.x, 2) + pow(p_w.y - p_h.y, 2) + pow(p_w.z - p_h.z, 2));
             int d_start = sqrt(pow(p_w.x - plano.p3.x, 2) + pow(p_w.y - plano.p3.y, 2) + pow(p_w.z - plano.p3.z, 2));
-            */
 
             int w1 = octant->p_start.y;
             int w2 = octant->p_end.y;
@@ -674,10 +673,20 @@ public:
                 }
             }
 
-            /*
-                rrvr
             */
-            
+
+	        for (int z = octant.p_start.z; z <= octant.p_end.z; ++z) {
+				for (int y = octant.p_start.y; y <= octant.p_end.y; ++y) {
+					for (int x = octant.p_start.x; x <= octant.p_end.x; ++x) {
+						if (plane.distance({x, y, z}) < 5) {
+							int pitagoraso = sqrt (pow (abs (plano.p3.x - x), 2) + pow (abs (plano.p3.z - z) , 2));
+							img(pitagoraso, y) = octant->type == 0 ? 0 : 255;
+						}
+					}
+				}
+			}		
+				
+			
         }
     }
     ~OcTree(){}
