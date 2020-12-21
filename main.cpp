@@ -119,7 +119,8 @@ void naive_cut (Cube cube, Point p1, Point p2, Point p3, Point p4) {
 
 int main(int argc,char **argv) {
 
-	const char *file_i = cimg_option("-i", "paciente1_1.txt", "Input filename");
+	// Usar el flag -i para indicarle el archivo que contiene el paths con todas las imágenes 
+	const char *file_i = cimg_option("-i", "paths/paciente1_1.txt", "Input filename");
 	const int dis = cimg_option("-s", 0,"Display");
 	const int threshold = cimg_option("-t", 100,"Threshold");
 
