@@ -24,7 +24,7 @@ struct Point {
 
     /* Producto Vectorial */
     const Point operator%(const Point &p2) const {
-        return Point(y * p2.z - z * p2.y,  z * p2.x - x * p2.z, x * p2.y - y * p2.x);
+        return Point(y * p2.z - z * p2.y, z * p2.x - x * p2.z, x * p2.y - y * p2.x);
     }
 
     const Point operator+ (const Point &p2) const {

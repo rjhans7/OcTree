@@ -362,19 +362,26 @@ public:
         vector<Point> points = {p1, p2, p3, p4};
         ram += points.size() * sizeof(Point);
 
-        //sort(points.begin(), points.end(), comparey);
-        //sort(points.begin(), points.begin() + 2 + 1, comparex);
-        //sort(points.begin() + 2, points.end(), comparex);
-
         vector<Octant> octants;
         fstream file(filename.c_str(), ios::binary | ios::in);
         Octant root; root.read(file, 0);
 
         Plane plane(points[0], points[1], points[2], points[3]);
-
-        make_cut(plane, root, octants, file);
+        if (plane.normal.x == 0 && plane.normal.y == 0) {
+            rebuildByZ (plane.p1.z);
+        }
+        else if (plane.normal.x == 0 && plane.normal.z == 0) {
+            rebuildByY (plane.p1.y);
+        }
+        else if (plane.normal.y == 0 && plane.normal.z == 0) {
+            rebuildByX (plane.p1.x);
+        }
+        else {
+            make_cut(plane, root, octants, file);
+            pintar(octants, plane);
+        }
         ram += octants.size() * sizeof(Octant) + sizeof(Octant) + sizeof(Plane);
-        pintar(octants, plane);
+        
     }
 
 
@@ -419,6 +426,7 @@ public:
         image.display();
 
     }
+    
 
     void rebuildByX (int x, Octant root, CImg<char> &image, fstream &file) {
         if (root.type != middle ) {
@@ -447,6 +455,7 @@ public:
 
     }
 
+
     void rebuildByY (int y) {
         fstream file(filename.c_str(), ios::binary | ios::in); 
         Octant root;
@@ -463,6 +472,7 @@ public:
         }
         image.display();
     }
+
 
     void rebuildByY (int y, Octant root, CImg<char> &image, fstream &file) {
         if (root.type != middle ) {
@@ -490,6 +500,7 @@ public:
 
     }
 
+
     void rebuildByZ (int z) {
         fstream file(filename.c_str(), ios::binary | ios::in); 
         Octant root;
@@ -507,6 +518,7 @@ public:
         }
         image.display();
     }
+
 
     void rebuildByZ (int z, Octant root, CImg<char> &image, fstream &file) {
         if (root.type != middle ) {
@@ -548,30 +560,7 @@ public:
 
         for (int i = 0; i < dim_z; i++) images[i] = CImg<char> (dim_x, dim_y);
 
-        /*#ifdef THREADS
-            if (root.type == full || root.type == empty) {
-                for (int z = root.p_start.z; z <= root.p_end.z; z++) rebuild_img (root, z, images);
-            }
-
-            else {
-                vector<thread> threads;
-
-                for (int i = 0; i < 8; i++) {
-                    if (root.children[i] != -1) {
-                        Octant child;
-                        child.read (file, root.children[i]);
-
-                        thread th([this, child, &images, &file]() {
-                            rebuild_all (child, images, file);
-                        });
-                        th.join();
-                    }
-                }
-
-            }
-        #else*/
-            rebuild_all (root, images, file);
-        //#endif
+        rebuild_all (root, images, file);
 
         for (int i = 0; i < dim_z; i++) images[i].display();
 
@@ -593,6 +582,7 @@ public:
         }
     }
 
+
     void rebuild_img (Octant octant, int z, CImg<char> *images) {
         for (int y = octant.p_start.y; y <= octant.p_end.y; y++) {
             for (int x = octant.p_start.x; x <= octant.p_end.x; x++) {
@@ -605,43 +595,18 @@ public:
     void pintar (vector<Octant> octants, Plane corte) {
         /* Para cortes sobre eje y (y=0) */
         /* Obtener alto y ancho */
-        //int height = sqrt(pow(abs(corte.p1.z - corte.p3.z) + 1, 2) + pow(abs (corte.p3.x - corte.p1.x) + 1, 2));
         int height = sqrt(pow(corte.p3.x - corte.p1.x, 2) + pow (corte.p3.y - corte.p1.y, 2) + pow(corte.p3.z - corte.p1.z, 2));
         int width = abs (corte.p4.x - corte.p3.x) + abs(corte.p4.y - corte.p3.y) + abs(corte.p4.z - corte.p3.z) + 1;  //sqrt(pow(corte.p4.y - corte.p3.y, 2) + pow (corte.p4.x - corte.p3.x, 2));
-        cout << height << " " << width << endl;
-        CImg<u_char> img (width, height);
+
+        CImg<u_char> img (height, width);
         ram += sizeof(int) * 2 + sizeof(CImg<u_char>);
-        /* Pintar el color de cada nodo en el plano */ 
-
-        //size_t const quarter_size = octants.size() / 4;
-
+        
         vector<Octant>::iterator begin = octants.begin();
-        //vector<Octant>::iterator split_1 = octants.begin() + quarter_size;
-        //vector<Octant>::iterator split_2 = octants.begin() + 2 * quarter_size;
-        //vector<Octant>::iterator split_3 = octants.end() - quarter_size;
         vector<Octant>::iterator end = octants.end();
 
+        /* Pintar el color de cada nodo en el plano */ 
         draw (begin, end, img, corte);
-        /*thread th1 ([this, begin, split_1, &img]() {
-            draw (begin, split_1, img);
-        });
-        thread th2 ([this, split_1, split_2, &img]() {
-            draw (split_1, split_2, img);
-        });
 
-        thread th3 ([this, split_2, split_3, &img]() {
-            draw (split_2, split_3, img);
-        });
-
-        thread th4 ([this, split_3, end, &img]() {
-            draw (split_3, end, img);
-        });
-
-        th1.join();
-        th2.join();
-        th3.join();
-        th4.join();
-*/
         img.display();
         //img.save_jpeg("resultados_cortes/corte_5.jpg");
     }
@@ -650,48 +615,22 @@ public:
     void draw (vector<Octant>::iterator start, vector<Octant>::iterator end, CImg<u_char> &img, Plane &plano) {
         for (vector<Octant>::iterator octant = start; octant != end; octant++) {
             //Hallamos el punto de interseccion del plano con las rectas 
-            /*int t_w = -1*((plano.normal.x*octant->p_start.x) + (plano.normal.y*octant->p_start.y) + (plano.normal.z*octant->p_start.z) + plano.d)/(plano.normal.x*(octant->p_end.x - octant->p_start.x));
-            int t_h = -1*((plano.normal.x*octant->p_start.x) + (plano.normal.y*octant->p_start.y) + (plano.normal.z*octant->p_start.z) + plano.d)/(plano.normal.z*(octant->p_end.z - octant->p_start.z));
 
-            Point p_w (octant->p_start.x + t_w*(octant->p_end.x - octant->p_start.x), octant->p_start.y, octant->p_start.z);
-            Point p_h (octant->p_start.x, octant->p_start.y, octant->p_start.z + t_h*(octant->p_end.z - octant->p_start.z));
-            int d = sqrt(pow(p_w.x - p_h.x, 2) + pow(p_w.y - p_h.y, 2) + pow(p_w.z - p_h.z, 2));
-            int d_start = sqrt(pow(p_w.x - plano.p3.x, 2) + pow(p_w.y - plano.p3.y, 2) + pow(p_w.z - plano.p3.z, 2));
-
-            int w1 = octant->p_start.y;
-            int w2 = octant->p_end.y;
-            int h1 = octant->p_start.x;
-            int h2 = octant->p_end.x;
-            
-
-            for (int i = h1; i <= h2; i++) {
-                for (int j = w1; j <= w2; j++) {
-                    if(i < img.width() && j < img.height())
-                        img(i, j) = (octant->type == 0) ? 0 : 255;
-                }
-            }
-
-            */
 	        for (int z = octant->p_start.z; z <= octant->p_end.z; ++z) {
 				for (int y = octant->p_start.y; y <= octant->p_end.y; ++y) {
 					for (int x = octant->p_start.x; x <= octant->p_end.x; ++x) {
 						if (plano.distance({x, y, z}) < 5) {
-                            cout << x << "," << y << "," << z << endl;
                             int pitagoraso;
-                            //cout << "p3: " << plano.p3.x << "," << plano.p3.y << "," << plano.p3.z << "," << " p4:" << plano.p4.x << "," << plano.p4.y << "," << plano.p4.z << endl;
                             /* revisar orientacion del corte */
                             if (plano.p3.y != plano.p4.y) {
-                                //cout << "orientado en y" << endl;
                                 pitagoraso = sqrt (pow (plano.p3.x - x, 2) + pow (plano.p3.z - z, 2));
                                 img(pitagoraso, y) = octant->type == 0 ? 0 : 255;
                             }
 							else if (plano.p3.x != plano.p4.x) {
-                                //cout << "orientado en x" << endl;
                                 pitagoraso = sqrt (pow (plano.p3.y - y, 2) + pow (plano.p3.z - z, 2));
                                 img(pitagoraso, x) = octant->type == 0 ? 0 : 255;
                             }
                             else if (plano.p3.z != plano.p4.z) {
-                                //cout << "orientado en z" << endl;
                                 pitagoraso = sqrt (pow (plano.p3.x - x, 2) + pow (plano.p3.y - y, 2));
                                 img(pitagoraso, z) = octant->type == 0 ? 0 : 255;
                             }
