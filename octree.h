@@ -20,11 +20,11 @@ mutex mtx;
 class OcTree {
 private:
 
-    enum n_type {full, empty, middle};
     struct Octant {
         long id;
         Point p_start, p_end;
-        n_type type; // color
+        cube_type color; // color
+        bool is_leaf;
         long children[8];
 
         Octant(){};
@@ -32,7 +32,7 @@ private:
         Octant(Point p_start, Point p_end){
             this->p_start = p_start;
             this->p_end = p_end;
-            type = middle;
+            is_leaf = false;
             id = -1;
             for (int i = 0; i < 8; i++) {
                 children[i] = -1;
@@ -65,7 +65,7 @@ public:
         rebuild_all();
     }
 
-    OcTree (Cube &img) {
+    OcTree (Cube &img, bool is_binary, cube_type img_umbral) {
         filename = "octree.bin";
         fstream file(filename, ios::trunc | ios::binary | ios::in | ios::out);
         int size_x = img[0][0].size() - 1;
@@ -78,9 +78,9 @@ public:
         nOctants++;
 
         #ifdef THREADS
-            first_build (0, 0, 0, size_x, size_y, size_z, root, img, file);
+            first_build (0, 0, 0, size_x, size_y, size_z, root, img, file, is_binary, img_umbral);
         #else 
-            build (0, 0, 0, size_x, size_y, size_z, root, img, file);
+            build (0, 0, 0, size_x, size_y, size_z, root, img, file, is_binary, img_umbral);
         #endif
             
         file.close();
@@ -99,11 +99,15 @@ public:
 
 
     // Deploys 8 threads;
-    void first_build (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Octant &root, Cube &img, fstream &file) {
-		if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
-            root.type = img[z_min][y_min][x_min] == 0 ? full : empty;
+    void first_build (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Octant &root, Cube &img, fstream &file, bool is_binary, cube_type img_umbral) {
+		
+        cube_type img_color = img[z_min][y_min][x_min];
+        bool all_equal = (is_binary)? check(x_min, y_min, z_min, x_max, y_max, z_max, img): check_gray_scale(x_min, y_min, z_min, x_max, y_max, z_max, img, img_umbral, img_color);
+        //bool all_equal = check(x_min, y_min, z_min, x_max, y_max, z_max, img);
+        if (all_equal) {
+            root.color = img_color;
+            root.is_leaf = true;
             root.write(file, root.id);
-
             return;
         }
 
@@ -124,8 +128,8 @@ public:
             root.children[0] = nOctants;
             nOctants++;
 
-            thread th1 ([this, x_min, y_min, z_min, x_m, y_m, z_m, &child_0, &img, &file](){
-                build (x_min, y_min, z_min, x_m, y_m, z_m, child_0, img, file);
+            thread th1 ([this, x_min, y_min, z_min, x_m, y_m, z_m, &child_0, &img, &file, &is_binary, &img_umbral](){
+                build (x_min, y_min, z_min, x_m, y_m, z_m, child_0, img, file, is_binary, img_umbral);
             });
             th1.join();
 
@@ -138,8 +142,8 @@ public:
             root.children[1] = nOctants;
             nOctants++;
 
-            thread th2 ([this, x_min, y_min, z_m_p, x_m, y_m, z_max, &child_1, &img, &file]() {
-                build (x_min, y_min, z_m_p, x_m, y_m, z_max, child_1, img, file);
+            thread th2 ([this, x_min, y_min, z_m_p, x_m, y_m, z_max, &child_1, &img, &file, &is_binary, &img_umbral]() {
+                build (x_min, y_min, z_m_p, x_m, y_m, z_max, child_1, img, file, is_binary, img_umbral);
             });
             th2.join();
         }
@@ -151,8 +155,8 @@ public:
             root.children[2] = nOctants;
             nOctants++;
             
-            thread th3 ([this, x_m_p, y_min, z_m_p, x_max, y_m, z_max, &child_2, &img, &file]() {
-                build (x_m_p, y_min, z_m_p, x_max, y_m, z_max, child_2, img, file);
+            thread th3 ([this, x_m_p, y_min, z_m_p, x_max, y_m, z_max, &child_2, &img, &file, &is_binary, &img_umbral]() {
+                build (x_m_p, y_min, z_m_p, x_max, y_m, z_max, child_2, img, file, is_binary, img_umbral);
             });
             th3.join();
         }
@@ -164,8 +168,8 @@ public:
             root.children[3] = nOctants;
             nOctants++;
 
-            thread th4 ([this, x_m_p, y_min, z_min, x_max, y_m, z_m, &child_3, &img, &file]() {
-                build (x_m_p, y_min, z_min, x_max, y_m, z_m, child_3, img, file);
+            thread th4 ([this, x_m_p, y_min, z_min, x_max, y_m, z_m, &child_3, &img, &file, &is_binary, &img_umbral]() {
+                build (x_m_p, y_min, z_min, x_max, y_m, z_m, child_3, img, file, is_binary, img_umbral);
             });
             th4.join();
         }
@@ -177,8 +181,8 @@ public:
             root.children[4] = nOctants;
             nOctants++;
 
-            thread th5 ([this, x_min, y_m_p, z_min, x_m, y_max, z_m, &child_4, &img, &file]() {
-                build (x_min, y_m_p, z_min, x_m, y_max, z_m, child_4, img, file);
+            thread th5 ([this, x_min, y_m_p, z_min, x_m, y_max, z_m, &child_4, &img, &file, &is_binary, &img_umbral]() {
+                build (x_min, y_m_p, z_min, x_m, y_max, z_m, child_4, img, file, is_binary, img_umbral);
             });
             th5.join();
         }
@@ -190,8 +194,8 @@ public:
             root.children[5] = nOctants;
             nOctants++;
 
-            thread th6 ([this, x_min, y_m_p, z_m_p, x_m, y_max, z_max, &child_5, &img, &file]() {
-                build (x_min, y_m_p, z_m_p, x_m, y_max, z_max, child_5, img, file);
+            thread th6 ([this, x_min, y_m_p, z_m_p, x_m, y_max, z_max, &child_5, &img, &file, &is_binary, &img_umbral]() {
+                build (x_min, y_m_p, z_m_p, x_m, y_max, z_max, child_5, img, file, is_binary, img_umbral);
             });
             th6.join();
         }
@@ -203,8 +207,8 @@ public:
             root.children[6] = nOctants;
             nOctants++;
             
-            thread th7 ([this, x_m_p, y_m_p, z_m_p, x_max, y_max, z_max, &child_6, &img, &file]() {
-                build (x_m_p, y_m_p, z_m_p, x_max, y_max, z_max, child_6, img, file);
+            thread th7 ([this, x_m_p, y_m_p, z_m_p, x_max, y_max, z_max, &child_6, &img, &file, &is_binary, &img_umbral]() {
+                build (x_m_p, y_m_p, z_m_p, x_max, y_max, z_max, child_6, img, file, is_binary, img_umbral);
             });
             th7.join();
         }
@@ -216,8 +220,8 @@ public:
             root.children[7] = nOctants;
             nOctants++;
 
-            thread th8 ([this, x_m_p, y_m_p, z_min, x_max, y_max, z_m, &child_7, &img, &file]() {
-                build (x_m_p, y_m_p, z_min, x_max, y_max, z_m, child_7, img, file);
+            thread th8 ([this, x_m_p, y_m_p, z_min, x_max, y_max, z_m, &child_7, &img, &file, &is_binary, &img_umbral]() {
+                build (x_m_p, y_m_p, z_min, x_max, y_max, z_m, child_7, img, file, is_binary, img_umbral);
             });
             th8.join();
         }
@@ -225,14 +229,17 @@ public:
         root.write(file, root.id);
     }
 
-    void build (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Octant &root, Cube &img, fstream &file) {
-		if (check(x_min, y_min, z_min, x_max, y_max, z_max, img)) {
-            root.type = img[z_min][y_min][x_min] == 0 ? full : empty;
+    void build (int x_min, int y_min, int z_min, int x_max, int y_max, int z_max, Octant &root, Cube &img, fstream &file, bool is_binary, cube_type img_umbral) {
+		cube_type img_color = img[z_min][y_min][x_min];
+        bool all_equal = (is_binary)? check(x_min, y_min, z_min, x_max, y_max, z_max, img): check_gray_scale(x_min, y_min, z_min, x_max, y_max, z_max, img, img_umbral, img_color);
+        //bool all_equal = check(x_min, y_min, z_min, x_max, y_max, z_max, img);
+        if (all_equal) {
+            root.color = img_color;
+            root.is_leaf = true;
             root.write(file, root.id);
 
             return;
         }
-
         int x_m = (x_max + x_min) / 2;
         int y_m = (y_max + y_min) / 2;
         int z_m = (z_max + z_min) / 2;
@@ -243,11 +250,13 @@ public:
         if ((x_min <= x_m) && (y_min <= y_m) && (z_min <= z_m)) {
             Octant child_0({x_min, y_min, z_min}, {x_m, y_m, z_m});
             ram += sizeof(Octant);
+            mtx.lock();
             child_0.write(file, nOctants);
+            mtx.unlock();
             root.children[0] = nOctants;
             nOctants++;
 
-            build (x_min, y_min, z_min, x_m, y_m, z_m, child_0, img, file);
+            build (x_min, y_min, z_min, x_m, y_m, z_m, child_0, img, file, is_binary, img_umbral);
         }
 
         if ((x_min <= x_m) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
@@ -258,7 +267,7 @@ public:
             root.children[1] = nOctants;
             nOctants++;
             mtx.unlock();
-            build (x_min, y_min, z_m + 1, x_m, y_m, z_max, child_1, img, file);
+            build (x_min, y_min, z_m + 1, x_m, y_m, z_max, child_1, img, file, is_binary, img_umbral);
         }
 
         if (((x_m + 1) <= x_max) && (y_min <= y_m) && ((z_m + 1) <= z_max)) {
@@ -269,7 +278,7 @@ public:
             root.children[2] = nOctants;
             nOctants++;
             mtx.unlock();
-            build (x_m + 1, y_min, z_m + 1, x_max, y_m, z_max, child_2, img, file);
+            build (x_m + 1, y_min, z_m + 1, x_max, y_m, z_max, child_2, img, file, is_binary, img_umbral);
         }
 
         if (((x_m + 1) <= x_max) && (y_min <= y_m) && (z_min <= z_m)) {
@@ -280,7 +289,7 @@ public:
             root.children[3] = nOctants;
             nOctants++;
             mtx.unlock();
-            build (x_m + 1, y_min, z_min, x_max, y_m, z_m, child_3, img, file);
+            build (x_m + 1, y_min, z_min, x_max, y_m, z_m, child_3, img, file, is_binary, img_umbral);
         }
 
         if ((x_min <= x_m) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
@@ -291,7 +300,7 @@ public:
             root.children[4] = nOctants;
             nOctants++;
             mtx.unlock();
-            build (x_min, y_m + 1, z_min, x_m, y_max, z_m, child_4, img, file);
+            build (x_min, y_m + 1, z_min, x_m, y_max, z_m, child_4, img, file, is_binary, img_umbral);
         }
 
         if ((x_min <= x_m) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
@@ -302,7 +311,7 @@ public:
             root.children[5] = nOctants;
             nOctants++;
             mtx.unlock();
-            build (x_min, y_m + 1, z_m + 1, x_m, y_max, z_max, child_5, img, file);
+            build (x_min, y_m + 1, z_m + 1, x_m, y_max, z_max, child_5, img, file, is_binary, img_umbral);
         }
 
         if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && ((z_m + 1) <= z_max)) {
@@ -313,7 +322,7 @@ public:
             root.children[6] = nOctants;
             nOctants++;
             mtx.unlock();
-            build (x_m + 1, y_m + 1, z_m + 1, x_max, y_max, z_max, child_6, img, file);
+            build (x_m + 1, y_m + 1, z_m + 1, x_max, y_max, z_max, child_6, img, file, is_binary, img_umbral);
         }
 
         if (((x_m + 1) <= x_max) && ((y_m + 1) <= y_max) && (z_min <= z_m)) {
@@ -324,14 +333,14 @@ public:
             root.children[7] = nOctants;
             nOctants++;
             mtx.unlock();
-            build (x_m + 1, y_m + 1, z_min, x_max, y_max, z_m, child_7, img, file);
+            build (x_m + 1, y_m + 1, z_min, x_max, y_max, z_m, child_7, img, file, is_binary, img_umbral);
         }
         root.write(file, root.id);
     }
 
 
     bool check (int &x_min, int &y_min, int &z_min, int &x_max, int &y_max, int &z_max, Cube &img) {
-        bool c = img[z_min][y_min][x_min];
+        cube_type c = img[z_min][y_min][x_min];
         ram += sizeof(bool);
 
         for (int z = z_min; z <= z_max; ++z) {
@@ -342,6 +351,34 @@ public:
             }
         }
         return true;
+    }
+
+    bool check_gray_scale(int &x_min, int &y_min, int &z_min, int &x_max, int &y_max, int &z_max, Cube &img, cube_type &umbral, cube_type &color_octant) {
+        if (umbral == 0) return check(x_min, y_min, z_min, x_max, y_max, z_max, img);
+        int color_sum = 0;
+        int n = abs((x_max-x_min) * (y_max-y_min) * (z_max - z_min));
+        for(int i=x_min; i<=x_max; i++){
+            for(int j=y_min; j<=y_max; j++){
+                for (int k=z_min; k<=z_max; k++){
+                    color_sum += img[k][j][i];
+                }
+            }
+        }
+        if (n == 0) return true;
+
+        int dist_tot = 0;
+        cube_type color_avg= color_sum/n;
+         for(int i=x_min; i<=x_max; i++) {
+            for(int j=y_min; j<=y_max; j++) {
+                for (int k=z_min; k<=z_max; k++) {
+                    dist_tot += pow(img[k][j][i]-color_avg, 2);
+                }
+            }
+        }
+
+        cube_type sqrt_dist_avg = sqrt(dist_tot)/n;
+        color_octant = color_avg;
+        return sqrt_dist_avg <= umbral;
     }
 
     bool intersect (Plane plano, Octant root) {
@@ -382,8 +419,7 @@ public:
 
     void make_cut (Plane plane,  Octant root, vector<Octant> &nodos, fstream &file) {
         if (intersect(plane, root)) {
-            if (root.type != middle) {
-                
+            if (root.is_leaf) {   
                 nodos.push_back(root);
                 return;
             }
@@ -407,7 +443,7 @@ public:
         fstream file(filename.c_str(), ios::binary | ios::in);
         Octant root;
         root.read(file, 0);
-        CImg<char> image (root.p_end.y + 1, root.p_end.z + 1);
+        CImg<u_char> image (root.p_end.y + 1, root.p_end.z + 1);
         int x_m = (root.p_end.x + root.p_start.x)/2;
 
         vector<int> c_ids;
@@ -423,12 +459,12 @@ public:
 
     }
 
-    void rebuildByX (int x, Octant root, CImg<char> &image, fstream &file) {
-        if (root.type != middle ) {
+    void rebuildByX (int x, Octant root, CImg<u_char> &image, fstream &file) {
+        if (root.is_leaf) {
             if (root.p_start.x <= x && root.p_end.x >= x) {
                 for (int k = root.p_start.z; k <= root.p_end.z; k++) {
                     for (int j = root.p_start.y; j <= root.p_end.y; j++) {
-                        image(j, k) = root.type;
+                        image(j, k) = root.color;
                     }
                 }
             }
@@ -454,7 +490,7 @@ public:
         fstream file(filename.c_str(), ios::binary | ios::in); 
         Octant root;
         root.read(file, 0);
-        CImg<char> image (root.p_end.x + 1, root.p_end.z + 1);
+        CImg<u_char> image (root.p_end.x + 1, root.p_end.z + 1);
         int y_m = (root.p_end.y + root.p_start.y)/2;
 
         size_t i = (y <= y_m)? 0 : 4;
@@ -467,12 +503,12 @@ public:
         image.display();
     }
 
-    void rebuildByY (int y, Octant root, CImg<char> &image, fstream &file) {
-        if (root.type != middle ) {
+    void rebuildByY (int y, Octant root, CImg<u_char> &image, fstream &file) {
+        if (root.is_leaf) {
             if (root.p_start.y <= y && root.p_end.y >= y) {
                 for (int k = root.p_start.z; k <= root.p_end.z; k++) {
                     for (int i = root.p_start.x; i <= root.p_end.x; i++) {
-                        image(i, k) = root.type;
+                        image(i, k) = root.color;
                     }
                 }
             }
@@ -497,7 +533,7 @@ public:
         fstream file(filename.c_str(), ios::binary | ios::in); 
         Octant root;
         root.read(file, 0);
-        CImg<char> image (root.p_end.x + 1, root.p_end.y + 1);
+        CImg<u_char> image (root.p_end.x + 1, root.p_end.y + 1);
         int z_m = (root.p_end.z + root.p_start.z)/2;
 
         vector<int> c_ids;
@@ -511,12 +547,12 @@ public:
         image.display();
     }
 
-    void rebuildByZ (int z, Octant root, CImg<char> &image, fstream &file) {
-        if (root.type != middle ) {
+    void rebuildByZ (int z, Octant root, CImg<u_char> &image, fstream &file) {
+        if (root.is_leaf) {
             if (root.p_start.z <= z && root.p_end.z >= z) {
                 for (int j = root.p_start.y; j <= root.p_end.y; j++) {
                     for (int i = root.p_start.x; i <= root.p_end.x; i++) {
-                        image(i, j) = root.type;
+                        image(i, j) = root.color;
                     }
                 }
             }
@@ -547,9 +583,9 @@ public:
         int dim_y = root.p_end.y + 1;
         int dim_x = root.p_end.x + 1;
 
-        CImg<char> images[dim_z];
+        CImg<u_char> images[dim_z];
 
-        for (int i = 0; i < dim_z; i++) images[i] = CImg<char> (dim_x, dim_y);
+        for (int i = 0; i < dim_z; i++) images[i] = CImg<u_char> (dim_x, dim_y);
 
         /*#ifdef THREADS
             if (root.type == full || root.type == empty) {
@@ -580,8 +616,8 @@ public:
 
     }
 
-    void rebuild_all(Octant root, CImg<char> *images, fstream &file){
-        if (root.type == full || root.type == empty) {
+    void rebuild_all(Octant root, CImg<u_char> *images, fstream &file){
+        if (root.is_leaf) {
             for (int z = root.p_start.z; z <= root.p_end.z; z++)
                 rebuild_img (root, z, images);
         }
@@ -596,10 +632,10 @@ public:
         }
     }
 
-    void rebuild_img (Octant octant, int z, CImg<char> *images) {
+    void rebuild_img (Octant octant, int z, CImg<u_char> *images) {
         for (int y = octant.p_start.y; y <= octant.p_end.y; y++) {
             for (int x = octant.p_start.x; x <= octant.p_end.x; x++) {
-                images[z] (y, x) = octant.type;
+                images[z] (y, x) = octant.color;
             }
         }
     }
@@ -678,9 +714,9 @@ public:
 	        for (int z = octant->p_start.z; z <= octant->p_end.z; ++z) {
 				for (int y = octant->p_start.y; y <= octant->p_end.y; ++y) {
 					for (int x = octant->p_start.x; x <= octant->p_end.x; ++x) {
-						if (plane.distance({x, y, z}) < 5) {
+						if (plano.distance({x, y, z}) < 5) {
 							int pitagoraso = sqrt (pow (abs (plano.p3.x - x), 2) + pow (abs (plano.p3.z - z) , 2));
-							img(pitagoraso, y) = octant->type == 0 ? 0 : 255;
+							img(pitagoraso, y) = octant->color;
 						}
 					}
 				}

@@ -4,7 +4,7 @@
 #include "octree.h"
 #include "structs.h"
 
-Cube build_cube (string filename, int dis, int umbral = 50) {
+Cube build_cube (string filename, bool display, cube_type bin_umbral = 50, bool to_binary = true) {
     ifstream fileIn(filename);
 	u_short dim_x, dim_y, dim_z;
 	fileIn >> dim_x >> dim_y >> dim_z;
@@ -20,11 +20,12 @@ Cube build_cube (string filename, int dis, int umbral = 50) {
 			int R = (int)img(x, y, 0);
 			int G = (int)img(x, y, 1);
 			int B = (int)img(x, y, 2);
-
-			imgBin(x, y) = ((R+G+B)/3 > umbral)? 255: 0;
+			
+			imgBin(x, y) = (to_binary)? (((R+G+B)/3 > bin_umbral)? 255: 0): R;
 		}
+
 		// imgBin.crop(2, 2, 508, 508);
-		if (dis) {
+		if (display) {
 			img.display();
 			imgBin.display();
 		}
@@ -121,13 +122,16 @@ int main(int argc,char **argv) {
 
 	// Usar el flag -i para indicarle el archivo que contiene el paths con todas las imágenes 
 	const char *file_i = cimg_option("-i", "paths/paciente1_1.txt", "Input filename");
-	const int dis = cimg_option("-s", 0,"Display");
-	const int threshold = cimg_option("-t", 100,"Threshold");
+	const bool dis = cimg_option("-d", 0,"Display");
+	const cube_type threshold_bin = cimg_option("-b", 100,"Threshold Binarization");
+	const cube_type threshold_gray_scale = cimg_option("-g", 10,"Threshold Gray Scale");
+	const bool is_binary = cimg_option("-u", 0,"Use Binary Image");
 
-	auto cubo = build_cube(file_i, dis, threshold);
- 	OcTree oct(cubo);
-	//visualizar(cubo, "cubo.txt");
-	//OcTree oct2 ("octree.bin");
+	auto cubo = build_cube(file_i, dis, threshold_bin, is_binary);
+ 	OcTree oct(cubo, is_binary, threshold_gray_scale);
+	// visualizar(cubo, "cubo.txt");
+	// OcTree oct2 ("octree.bin");
+	oct.rebuildByZ(20);
     // for (int i = 0; i < 8; i++) {
 	// 	oct2.rebuildByX(i);
 	// 	oct2.rebuildByY(i);

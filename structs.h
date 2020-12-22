@@ -6,7 +6,7 @@
 using namespace std;
 
 typedef unsigned char u_char;
-typedef bool cube_type;
+typedef u_char cube_type;
 typedef vector<vector<vector<cube_type>>> Cube;
 
 
