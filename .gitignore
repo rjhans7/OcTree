@@ -362,3 +362,4 @@ files.sh
 cmake-build-debug
 build
 *.bmp
+.jpg
