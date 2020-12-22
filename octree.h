@@ -7,6 +7,7 @@
 #include <mutex>
 #include <fstream>
 #include <algorithm>
+#include <string>
 #include "CImg/CImg.h"
 #include "structs.h"
 
@@ -428,8 +429,6 @@ public:
 
         
         image.display();
-
-        //string name = 
     }
     
 
@@ -614,7 +613,10 @@ public:
 
         img.display();
 
-        //img.save_jpeg("resultados_cortes/corte_5.jpg");
+        string name = "resultados_cortes/corte_" + to_string(cut_num) + ".jpg";
+
+        img.save_jpeg(name.c_str());
+        cut_num++;
     }
 
 
