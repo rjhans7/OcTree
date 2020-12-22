@@ -24,7 +24,7 @@ struct Point {
 
     /* Producto Vectorial */
     const Point operator%(const Point &p2) const {
-        return Point(y * p2.z - z * p2.y, x * p2.z - z * p2.x, x * p2.y - y * p2.x);
+        return Point(y * p2.z - z * p2.y, z * p2.x - x * p2.z, x * p2.y - y * p2.x);
     }
 
     const Point operator+ (const Point &p2) const {
@@ -47,7 +47,7 @@ struct Plane {
         Point v1 = p2 - p1;
         Point v2 = p3 - p1;
         normal = v1 % v2;
-        d = 0 - normal * p1;
+        d = -1 * (normal * p1);
     }
 
     bool checker(Point k) {
