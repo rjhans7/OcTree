@@ -57,15 +57,18 @@ private:
     clock_t t_start, t_end;
     double time_taken;
     long ram;
+    int cut_num;
 
 public:
 
     OcTree (string filename) {
         this->filename = filename;
+        cut_num = 0;
         rebuild_all();
     }
 
     OcTree (Cube &img) {
+        cut_num = 0;
         filename = "octree.bin";
         fstream file(filename, ios::trunc | ios::binary | ios::in | ios::out);
         int size_x = img[0][0].size() - 1;
@@ -422,9 +425,11 @@ public:
             temp.read(file, root.children[c_ids[i]]);   
             rebuildByX(x, temp, image, file);
         }
+
         
         image.display();
 
+        //string name = 
     }
     
 
@@ -591,13 +596,13 @@ public:
         }
     }
 
-
+    
     void pintar (vector<Octant> octants, Plane corte) {
         /* Para cortes sobre eje y (y=0) */
         /* Obtener alto y ancho */
-        int height = sqrt(pow(corte.p3.x - corte.p1.x, 2) + pow (corte.p3.y - corte.p1.y, 2) + pow(corte.p3.z - corte.p1.z, 2));
+        int height = sqrt(pow(corte.p3.x - corte.p1.x, 2) + pow (corte.p3.y - corte.p1.y, 2) + pow(corte.p3.z - corte.p1.z, 2)) + 3;
         int width = abs (corte.p4.x - corte.p3.x) + abs(corte.p4.y - corte.p3.y) + abs(corte.p4.z - corte.p3.z) + 1;  //sqrt(pow(corte.p4.y - corte.p3.y, 2) + pow (corte.p4.x - corte.p3.x, 2));
-
+        cout << height << " " << width << endl;
         CImg<u_char> img (height, width);
         ram += sizeof(int) * 2 + sizeof(CImg<u_char>);
         
@@ -608,6 +613,7 @@ public:
         draw (begin, end, img, corte);
 
         img.display();
+
         //img.save_jpeg("resultados_cortes/corte_5.jpg");
     }
 
@@ -619,7 +625,7 @@ public:
 	        for (int z = octant->p_start.z; z <= octant->p_end.z; ++z) {
 				for (int y = octant->p_start.y; y <= octant->p_end.y; ++y) {
 					for (int x = octant->p_start.x; x <= octant->p_end.x; ++x) {
-						if (plano.distance({x, y, z}) < 5) {
+						if (plano.distance({x, y, z}) < 2) {
                             int pitagoraso;
                             /* revisar orientacion del corte */
                             if (plano.p3.y != plano.p4.y) {

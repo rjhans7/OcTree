@@ -3,6 +3,7 @@
 
 #include "octree.h"
 #include "structs.h"
+#include <stdlib.h>
 
 Cube build_cube (string filename, int dis, int umbral = 50) {
     ifstream fileIn(filename);
@@ -126,6 +127,49 @@ int main(int argc,char **argv) {
 
 	auto cubo = build_cube(file_i, dis, threshold);
  	OcTree oct(cubo);
+	vector<tuple<Point, Point, Point, Point>> cuts;
+	
+	tuple<Point, Point, Point, Point> cut;
+	Point p1, p2, p3, p4;
+	int y, z;
+	/* Generar cortes en eje y */
+	for (int i = 0; i < 7; i++) {
+		z = rand () % 39;
+		p1 = Point (0, 0, 39 - z);
+		p2 = Point (0, 511, 39 - z);
+		p3 = Point (511, 0, z);
+		p4 = Point (511, 511, z);
+		cut = {p1, p2, p3, p4};
+		cuts.push_back (cut);
+	}
+	/* Generar cortes en eje x */
+	for (int i = 0; i < 7; i++) {
+		z = rand () % 39;
+		p1 = Point (0, 0, 39 - z);
+		p2 = Point (511, 0, 39 - z);
+		p3 = Point (0, 511, z);
+		p4 = Point (511, 511, z);
+		cut = {p1, p2, p3, p4};
+		cuts.push_back (cut);
+	}
+	/* Generar cortes en eje z */
+	for (int i = 0; i < 6; i++) {
+		y = rand () % 511;
+		p1 = Point (0, y, 0);
+		p2 = Point (0, y, 39);
+		p3 = Point (511, 511 - y, 0);
+		p4 = Point (511, 511 - y, 39);
+		cut = {p1, p2, p3, p4};
+		cuts.push_back (cut);
+	}
+	for (unsigned i = 0; i < cuts.size (); ++i) {
+		cout << "corte: " << i << endl;
+		cout << get<0>(cuts[i]).x << "," << get<0>(cuts[i]).y << "," << get<0>(cuts[i]).z << " "; 
+		cout << get<1>(cuts[i]).x << "," << get<1>(cuts[i]).y << "," << get<1>(cuts[i]).z << " "; 
+		cout << get<2>(cuts[i]).x << "," << get<2>(cuts[i]).y << "," << get<2>(cuts[i]).z << " "; 
+		cout << get<3>(cuts[i]).x << "," << get<3>(cuts[i]).y << "," << get<3>(cuts[i]).z << endl; 
+		oct.make_cut (get<0>(cuts[i]), get<1> (cuts[i]), get<2> (cuts[i]), get<3> (cuts[i]));
+	}
 	//visualizar(cubo, "cubo.txt");
 	//OcTree oct2 ("octree.bin");
     // for (int i = 0; i < 8; i++) {
@@ -143,8 +187,8 @@ int main(int argc,char **argv) {
 	//oct.make_cut({255, 0, 0}, {255, 0, 39}, {255, 511, 0}, {255, 511, 39});
 	//oct.make_cut({0, 255, 0}, {0, 255, 39}, {511, 255, 0}, {511, 255, 39});
 	/* -----------*/
-	oct.make_cut({0, 0, 0}, {511, 0, 0}, {0, 511, 39}, {511, 511, 39});
-	//oct.make_cut({0, 0, 0}, {0, 0, 39}, {511, 511, 0}, {511, 511, 39});
+	//oct.make_cut({0, 0, 0}, {511, 0, 0}, {0, 511, 39}, {511, 511, 39});
+	//oct.make_cut({0, 20, 0}, {0, 20, 39}, {511, 491, 0}, {511, 491, 39});
 	//clock_t start, end;
 	//start = clock ();
 	//naive_cut (cubo, {0, 255, 0}, {0, 255, 39}, {51, 255, 0}, {511, 255, 39});
